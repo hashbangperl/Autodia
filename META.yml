@@ -1,0 +1,15 @@
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Autodia
+version:      2.03
+version_from: lib/Autodia.pm
+installdirs:  site
+requires:
+    Data::Dumper:                  0
+    File::Find:                    0
+    Getopt::Std:                   0
+    Template:                      1
+    XML::Simple:                   0
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.17

@@ -1,0 +1,36 @@
+head	1.1;
+access;
+symbols;
+locks
+	teejay:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2005.05.06.17.26.52;	author teejay;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@  [%# -------------------------------------------- %]
+  [% classes = diagram.Classes %]
+  [% FOREACH class = classes %]
+  CREATE TABLE [% class.Name %] (
+	[% FOREACH at = class.Attributes %]
+	[% at.name %] [% at.type %] [% IF class.Attributes.last %] [% ELSE %], [% END %]
+	[% END %]
+	[% IF  class.Operations.count > 0 %]
+	PRIMARY KEY ([% FOREACH op = class.Operations %] [% op.name %] [% IF class.Operations.last %] ) [% ELSE %], [% END %]
+	[% END %]
+  );
+  [% END %]
+@

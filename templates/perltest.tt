@@ -1,0 +1,51 @@
+
+[% classes = diagram.Classes %]
+[% FOREACH class = classes %]
+
+[% USE String %]
+[% SET filename = String.new(class.Name).split('::').last %]
+[% SET filename = filename _ '.t' %]
+[% FILTER redirect(filename) %]
+
+#!/usr/bin/perl
+
+use Test::More qw(no_plan);
+
+use_ok ([% class.Name %]);
+
+
+# test constructor
+
+my $object = [% class.Name %]->create( 
+
+					{
+[% IF class.Attributes %]
+  [% FOREACH at = class.Attributes %]
+					[% at.name %] => '', 
+  [% END %]
+[% ELSE %]
+  ...
+[% END %]					  
+                                        } 
+				     );
+
+[% END %]
+
+[% END %]
+
+[% IF class.Operations %]
+
+# test methods
+
+[% FOREACH op = class.Operations %]
+
+my $expected_[% op.name %]_result = '';
+my $[% op.name %]_result = [% op.name %]( .. );
+is ($[% op.name %]_result, $expected_[% op.name %]_result, 'method [% op.name %] ok ');
+
+[% END %]
+
+[% END %]
+
+
+

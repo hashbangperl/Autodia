@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+use strict;
+
+use Template;
+
+sub test {
+ print "test\n";
+}

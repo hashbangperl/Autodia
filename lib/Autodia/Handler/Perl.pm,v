@@ -1,0 +1,1075 @@
+head	1.8;
+access;
+symbols;
+locks
+	teejay:1.8; strict;
+comment	@# @;
+
+
+1.8
+date	2006.04.27.14.25.07;	author teejay;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2004.10.13.13.02.18;	author teejay;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2004.09.18.02.08.46;	author teejay;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2004.06.26.22.30.05;	author teejay;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2003.12.22.16.26.47;	author teejay;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2003.12.10.20.23.31;	author teejay;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.06.26.22.23.44;	author aaron;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.25.23.06.49;	author aaron;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.8
+log
+@applied Joel Fixes
+@
+text
+@################################################################
+# AutoDIA - Automatic Dia XML.   (C)Copyright 2001 A Trevena   #
+#                                                              #
+# AutoDIA comes with ABSOLUTELY NO WARRANTY; see COPYING file  #
+# This is free software, and you are welcome to redistribute   #
+# it under certain conditions; see COPYING file for details    #
+################################################################
+package Autodia::Handler::Perl;
+
+require Exporter;
+
+use strict;
+
+use Data::Dumper;
+
+use vars qw($VERSION @@ISA @@EXPORT);
+use Autodia::Handler;
+
+@@ISA = qw(Autodia::Handler Exporter);
+
+use Autodia::Diagram;
+
+#---------------------------------------------------------------
+
+#####################
+# Constructor / Class Methods
+
+# new inherited from Autodia::Handler
+
+sub find_files_by_packagename {
+    my $config = shift;
+    my $args = $config->{args};
+    my @@filenames = ();
+    die "not implemented yet, sorry\n";
+    my @@incdirs = @@INC;
+    if ($config) {
+      unshift (@@incdirs, split(" ",$args->{'d'}));
+    }
+
+    my @@regexen = map ( s|::|\/|g, split(" ",$args->{'i'}));
+    find ( { wanted => sub {
+	       unless (-d) {
+		 foreach my $regex (@@regexen) {
+		   push @@filenames, $File::Find::name
+		     if ($File::Find::name =~ m/$regex/);
+		 }
+	       }
+	     },
+	     preprocess => sub {
+	       my @@return;
+	       foreach (@@_) {
+		 push(@@return,$_) unless (m/^.*\/?(CVS|RCS)$/ && $config->{skipcvs});
+	       }
+	       return @@return;
+	     },
+	   },
+	   @@incdirs
+	 );
+    return @@filenames;
+}
+
+#------------------------------------------------------------------------
+# Access Methods
+
+# parse_file inherited from Autodia::Handler
+
+#-----------------------------------------------------------------------------
+# Internal Methods
+
+# _initialise inherited from Autodia::Handler
+
+sub _parse {
+    my $self     = shift;
+    my $fh       = shift;
+    my $filename = shift;
+    my $Diagram  = $self->{Diagram};
+    my $pkg_regexp = '[A-Z][\w:]+';
+    my $Class;
+
+    # Class::Tangram bits
+    $self->{_is_tangram_class} = {};
+    $self->{_in_tangram_class} = 0;
+    my $pat1 = '[\'\"]?\w+[\'\"]?\s*=>\s*\{.*?\}';
+    my $pat2 = '[\'\"]?\w+[\'\"]?\s*=>\s*undef';
+
+    # pod
+    $self->{pod} = 0;
+
+    # parse through file looking for stuff
+    my $continue_base = 0;
+    my $continue_fields = 0;
+    my $continue_package = 0;
+    my $continue_cdbi_cols = 0;
+
+    my $line_no = 0;
+    foreach my $line (<$fh>) {
+      $line_no++;
+	chomp $line;
+	if ($self->_discard_line($line)) {
+	    next;
+	}
+
+
+	# if line contains package name then parse for class name
+	if ($line =~ /^\s*package\s+($pkg_regexp)?;?/ || $continue_package) {
+	  $line =~ /^\s*($pkg_regexp);/ if($continue_package);
+	  if(!$1) {
+	    warn "No package name! line $line_no : $line\n";
+            $continue_package = 1;
+            next;
+	  }
+
+	  $continue_package = 0;
+	  my $className = $1;
+	  # create new class with name
+	  $Class = Autodia::Diagram::Class->new($className);
+	  # add class to diagram
+	  $Class = $Diagram->add_class($Class);
+	}
+
+	if ($line =~ /^\s*use\s+base\s+(?:q|qw|qq)?\s*([\'\"\(\{\/\#])\s*([^\'\"\)\}\/\#]*)\s*(\1|[\)\}])?/ or ($continue_base && $line =~ /$continue_base/)) {
+
+	    my $superclass = $2;
+	    my $end = $3 || '';
+
+	    if ($continue_base) {
+#		warn "continuing base\n";
+		$continue_base =~ s/[\)\}\'\"]/\\1/;
+#		warn "base ctd : $continue_base\n";
+#               warn "superclass : " . ($superclass|| '') . "\n";
+
+		if ( $line =~ /(.*)\s*$continue_base?/ ) {
+		    $continue_base = 0;
+		    $superclass = $1;
+#		    warn "end of continued base\n";
+		}
+	    } else {
+#		warn "start of base\n";
+#		warn "superclass : $superclass\n";
+		$continue_base = '[\)\}\'\"]';
+		if ($end) {
+		  $continue_base = 0;
+#		  warn "base is only 1 line\n";
+		}
+#		warn "continue base : $continue_base\n";
+	    }
+#	    warn "superclass : $superclass\n";
+
+	    # check package exists before doing stuff
+	    $self->_is_package(\$Class, $filename);
+
+	    my @@superclasses = split(/[\s*,]/, $superclass);
+
+	    foreach my $super (@@superclasses) # WHILE_SUPERCLASSES
+		{
+		    # discard if stopword
+		    next if ($super =~ /(?:exporter|autoloader)/i);
+		    # create superclass
+		    my $Superclass = Autodia::Diagram::Superclass->new($super);
+		    # add superclass to diagram
+
+
+		    $self->{_is_tangram_class}{$Class->Name} = {state=>0} if ($super eq 'Class::Tangram');
+
+		    my $exists_already = $Diagram->add_superclass($Superclass);
+		    #	  warn "already exists ? $exists_already \n";
+		    if (ref $exists_already) {
+			$Superclass = $exists_already;
+		    }
+		    # create new inheritance
+		    my $Inheritance = Autodia::Diagram::Inheritance->new($Class, $Superclass);
+		    # add inheritance to superclass
+		    $Superclass->add_inheritance($Inheritance);
+		    # add inheritance to class
+		    $Class->add_inheritance($Inheritance);
+		    # add inheritance to diagram
+		    $Diagram->add_inheritance($Inheritance);
+		}
+	    next;
+	}
+
+	# if line contains dependancy name then parse for module name
+	if ($line =~ /^\s*(use|require)\s+($pkg_regexp)/) {
+	    unless (ref $Class) {
+		# create new class with name
+		$Class = Autodia::Diagram::Class->new($filename);
+		# add class to diagram
+		$Class = $Diagram->add_class($Class);
+	    }
+	    my $componentName = $2;
+	    # discard if stopword
+	    next if ($componentName =~ /^(strict|vars|exporter|autoloader|warnings.*|constant.*|data::dumper|carp.*|overload|switch|\d|lib)$/i);
+
+	    # check package exists before doing stuff
+	    $self->_is_package(\$Class, $filename);
+
+
+	    if ($line =~ /\s*use\s+(fields|private|public)\s+(?:q|qw|qq){0,1}\s*([\'\"\(\{\/\#])\s*(.*)\s*([\)\}\1]?)/ or $continue_fields) {
+		my ($pragma,$fields) = ($1,$3);
+#		warn "pragma : $pragma .. fields : $fields\n";
+		if ($continue_fields) {
+		    $continue_fields =~ s/[\)\}\'\"]/\\1/;
+#		    warn "fields ctd : $continue_fields\n";
+		    if ( $line =~ m/(.*)\s*$continue_fields?/ ) {
+			$continue_fields = 0;
+			$fields = $1;
+		    }
+		} else {
+		    $continue_fields = '[\)\}\'\"]';
+		    if ($fields =~ /(.*)([\)\}\1])/) {
+			$continue_fields = 0;
+			$fields = $1;
+		    }
+#		    warn "continue fields : $continue_fields\n";
+		}
+#		warn "fields : $fields\n";
+
+		my @@fields = split(/\s+/,$fields);
+		foreach my $field (@@fields) {
+#		    warn "fields : $field\n";
+		    my $attribute_visibility = ( $field =~ m/^\_/ ) ? 1 : 0;
+		    unless ($pragma eq 'fields') {
+			$attribute_visibility = ($pragma eq 'private' ) ? 1 : 0;
+		    }
+		    $Class->add_attribute({
+					   name => $field,
+					   visibility => $attribute_visibility,
+					   Id => $Diagram->_object_count,
+					  }) unless ($field =~ /^\$/);
+		}
+	    } else {
+		# create component
+		my $Component = Autodia::Diagram::Component->new($componentName);
+		# add component to diagram
+		my $exists = $Diagram->add_component($Component);
+
+		# replace component if redundant
+		if (ref $exists) {
+		    $Component = $exists;
+		}
+		# create new dependancy
+		my $Dependancy = Autodia::Diagram::Dependancy->new($Class, $Component);
+		# add dependancy to diagram
+		$Diagram->add_dependancy($Dependancy);
+		# add dependancy to class
+		$Class->add_dependancy($Dependancy);
+		# add dependancy to component
+		$Component->add_dependancy($Dependancy);
+		next;
+	    }
+	}
+
+	# if ISA in line then extract templates/superclasses
+	if ($line =~ /^\s*\@@(?:\w+\:\:)*ISA\s*\=\s*(?:q|qw){0,1}\((.*)\)/) {
+	    my $superclass = $1;
+	    $superclass =~ s/[\'\",]//g;
+
+	    #      warn "handling superclasses $1 with \@@ISA\n";
+	    #      warn "superclass line : $line \n";
+	    if ($superclass) {
+		# check package exists before doing stuff
+		$self->_is_package(\$Class, $filename);
+
+		my @@superclasses = split(" ", $superclass);
+
+		foreach my $super (@@superclasses) # WHILE_SUPERCLASSES
+		    {
+			# discard if stopword
+			next if ($super =~ /(?:exporter|autoloader)/i || !$super);
+			# create superclass
+			my $Superclass = Autodia::Diagram::Superclass->new($super);
+			# add superclass to diagram
+			my $exists_already = $Diagram->add_superclass($Superclass);
+			#	      warn "already exists ? $exists_already \n";
+			if (ref $exists_already) {
+			    $Superclass = $exists_already;
+			}
+			$self->{_is_tangram_class}{$Class->Name} = {state=>0} if ($super eq 'Class::Tangram');
+			# create new inheritance
+			#	      warn "creating inheritance from superclass : $super\n";
+			my $Inheritance = Autodia::Diagram::Inheritance->new($Class, $Superclass);
+			# add inheritance to superclass
+			$Superclass->add_inheritance($Inheritance);
+			# add inheritance to class
+			$Class->add_inheritance($Inheritance);
+			# add inheritance to diagram
+			$Diagram->add_inheritance($Inheritance);
+		    }
+	    } else {
+		warn "ignoring empty \@@ISA line $line_no \n";
+	    }
+	}
+
+	# Handle Class::Tangram classes
+	if (ref $self) {
+	    if ($line =~ /^\s*(?:our|my)?\s+\$fields\s(.*)$/ and defined $self->{_is_tangram_class}{$Class->Name}) {
+		$self->{_field_string} = '';
+#		warn "tangram parser : found start of fields for ",$Class->Name,"\n";
+		$self->{_field_string} = $1;
+#		warn "field_string : $self->{_field_string}\n";
+		$self->{_in_tangram_class} = 1;
+		if ( $line =~ /^(.*\}\s*;)/) {
+#		    warn "found end of fields for  ",$Class->Name,"\n";
+		    $self->{_in_tangram_class} = 2;
+		}
+	    }
+	    if ($self->{_in_tangram_class}) {
+
+		if ( $line =~ /^(.*\}\s*;)/ && $self->{_in_tangram_class} == 1) {
+#		    warn "found end of fields for  ",$Class->Name,"\n";
+		    $self->{_field_string} .= $1;
+		    $self->{_in_tangram_class} = 2;
+		} else {
+#		    warn "adding line to fields for  ",$Class->Name,"\n";
+		    $self->{_field_string} .= $line unless ($self->{_in_tangram_class} == 2);
+		}
+		if ($self->{_in_tangram_class} == 2) {
+#		    warn "processing fields for ",$Class->Name,"\n";
+		    $_ = $self->{_field_string};
+		    s/^\s*\=\s*\{\s//;
+		    s/\}\s*;$//;
+		    s/[\s\n]+/ /g;
+#		    warn "fields : $_\n";
+		    my %field_types = m/(\w+)\s*=>\s*[\{\[]\s*($pat1|$pat2|qw\([\w\s]+\))[\s,]*[\}\]]\s*,?\s*/g;
+
+#		    warn Dumper(field_types=>%field_types);
+		    foreach my $field_type (keys %field_types) {
+#			warn "handling $field_type..\n";
+			$_ = $field_types{$field_type};
+			my $pat1 = '\'\w+\'\s*=>\s*\{.*?\}';
+			my $pat2 = '\'\w+\'\s*=>\s*undef';
+			my %fields;
+			if (/qw\((.*)\)/) {
+			    my $fields = $1;
+#			    warn "qw fields : $fields\n";
+			    my @@fields = split(/\s+/,$fields);
+			    @@fields{@@fields} = @@fields;
+			} else {
+			    %fields = m/[\'\"]?(\w+)[\'\"]?\s*=>\s*([\{\[].*?[\}\]]|undef)/g;
+			}
+#			warn Dumper(fields=>%fields);
+			foreach my $field (keys %fields) {
+#			    warn "found field : '$field' of type '$field_type' in (class ",$Class->Name,") : \n";
+			    my $attribute = { name=>$field, type=>$field_type, Id => $Diagram->_object_count, };
+			    if ($fields{$field} =~ /class\s*=>\s*[\'\"](.*?)[\'\"]/) {
+				$attribute->{type} = $1;
+			    }
+			    if ($fields{$field} =~ /init_default\s*=>\s*[\'\"](.*?)[\'\"]/) {
+				$attribute->{default} = $1;
+				# FIXME : attribute default values unsupported ?
+			    }
+			    $attribute->{visibility} = ( $attribute->{name} =~ m/^\_/ ) ? 1 : 0;
+
+			    $Class->add_attribute($attribute);
+			}
+
+		    }
+		    $self->{_in_tangram_class} = 0;
+		}
+	    }
+
+	}
+
+	# handle Class::DBI/Ima::DBI
+	if ($line =~ /->columns\(\s*All\s*=>\s*(.*)$/) {
+	  my $columns = $1;
+	  my @@cols;
+	  if ($columns =~ s/^qw(.)//) {
+	    $columns =~ s/\s*[\)\]\}\/\#\|]\s*\)\s*;\s*(#.*)?$//;
+	    @@cols = split(/\s+/,$columns);
+	  } elsif ($columns =~ /'.+'/) {
+	    @@cols =  map( /'(.*)'/ ,split(/\s*,\s*/,$columns));
+	  } else {
+	    warn "can't parse CDBI style columns line $line_no\n";
+	    next;
+	  }
+
+	  foreach my $col ( @@cols ) {
+	    # add attribute
+	    my $visibility = ( $col =~ m/^\_/ ) ? 1 : 0;
+	    $Class->add_attribute({
+				   name => $col,
+				   visibility => $visibility,
+				   Id => $Diagram->_object_count,
+				  });
+	    # add accessor
+	    $Class->add_operation({ name => $col, visibility => $visibility, Id => $Diagram->_object_count() } );
+	  }
+
+	  $continue_cdbi_cols = 1 unless $line =~ s/(.*)\)\s*;(#.*)?\s*$/$1/;
+	}
+
+	if ($continue_cdbi_cols) {
+	  my @@cols;
+	  $continue_cdbi_cols = 0 if $line =~ s/(.*)\)\s*;(#.*)?\s*$/$1/;
+	  if ($line =~ /'.+'/) {
+	    $line =~ s/\s*[\)\]\}\/\#\|]\s*$//;
+	    @@cols =  map( /'(.*)'/ ,split(/\s*,\s*/,$line));
+	  } else {
+	    @@cols = split(/\s+/,$line);
+	  }
+	  foreach my $col ( @@cols ) {
+	    # add attribute
+	    my $visibility = ( $col =~ m/^\_/ ) ? 1 : 0;
+	    $Class->add_attribute({
+				   name => $col,
+				   visibility => $visibility,
+				   Id => $Diagram->_object_count,
+				  });
+	    # add accessor
+	    $Class->add_operation({ name => $col, visibility => $visibility, Id => $Diagram->_object_count() } );
+	  }
+	}
+
+	# if line contains sub then parse for method data
+	if ($line =~ /^\s*sub\s+?(\w+)/) {
+	    my $subname = $1;
+
+	    # check package exists before doing stuff
+	    $self->_is_package(\$Class, $filename);
+
+	    my %subroutine = ( "name" => $subname, );
+	    $subroutine{"visibility"} = ($subroutine{"name"} =~ m/^\_/) ? 1 : 0;
+	    $subroutine{"Id"} = $Diagram->_object_count();
+
+	    # NOTE : perl doesn't provide named parameters
+	    # if we wanted to be clever we could count the parameters
+	    # see Autodia::Handler::PHP for an example of parameter handling
+
+	    $Class->add_operation(\%subroutine);
+	}
+
+	# if line contains object attributes parse add to class
+	if ($line =~ m/\$(class|self|this)\-\>\{['"]*(.*?)["']*}/) {
+	    my $attribute_name = $2;
+	    my $attribute_visibility = ( $attribute_name =~ m/^\_/ ) ? 1 : 0;
+
+	    $Class->add_attribute({
+				   name => $attribute_name,
+				   visibility => $attribute_visibility,
+				   Id => $Diagram->_object_count,
+				  }) unless ($attribute_name =~ /^\$/);
+	}
+
+	# add this block once can handle being entering & exiting subs:
+	# if line contains possible args to method add them to method
+	#	if (($line =~ m/^\([\w\s]+\)\s*\=\s*\@@\_\;\s*$/) && ())
+	#	  {
+	#	    print "should be adding these arguments to sub : $1\n";
+	#	  }
+	
+    }
+
+    $self->{Diagram} = $Diagram;
+    close $fh;
+    return;
+}
+
+sub _discard_line
+{
+  my $self    = shift;
+  my $line    = shift;
+  my $discard = 0;
+
+  SWITCH:
+    {
+	if ($line =~ m/^\s*$/) # if line is blank or white space discard
+	{
+	    $discard = 1;
+	    last SWITCH;
+	}
+
+	if ($line =~ /^\s*\#/) # if line is a comment discard
+	{
+	    $discard = 1;
+	    last SWITCH;
+	}
+
+	if ($line =~ /^\s*\=head/) # if line starts with pod syntax discard and flag with $pod
+	{
+	    $self->{pod} = 1;
+	    $discard = 1;
+	    last SWITCH;
+	}
+
+	if ($line =~ /^\s*\=cut/) # if line starts with pod end syntax then unflag and discard
+	{
+	    $self->{pod} = 0;
+	    $discard = 1;
+	    last SWITCH;
+	}
+
+	if ($self->{pod} == 1) # if line is part of pod then discard
+	{
+	    $discard = 1;
+	    last SWITCH;
+	}
+    }
+    return $discard;
+}
+
+####-----
+
+sub _is_package
+  {
+    my $self    = shift;
+    my $package = shift;
+    my $Diagram = $self->{Diagram};
+
+    unless(ref $$package)
+       {
+	 my $filename = shift;
+	 # create new class with name
+	 $$package = Autodia::Diagram::Class->new($filename);
+	 # add class to diagram
+	 $Diagram->add_class($$package);
+       }
+
+    return;
+  }
+
+
+
+####-----
+
+1;
+
+###############################################################################
+
+=head1 NAME 
+
+Autodia::Handler::Perl.pm - AutoDia handler for perl
+
+=head1 INTRODUCTION
+
+HandlerPerl parses files into a Diagram Object, which all handlers use. The role of the handler is to parse through the file extracting information such as Class names, attributes, methods and properties.
+
+HandlerPerl parses files using simple perl rules. A possible alternative would be to write HandlerCPerl to handle C style perl or HandleHairyPerl to handle hairy perl.
+
+HandlerPerl is registered in the Autodia.pm module, which contains a hash of language names and the name of their respective language - in this case:
+
+%language_handlers = { .. , perl => "perlHandler", .. };
+
+=head1 CONSTRUCTION METHOD
+
+use Autodia::Handler::Perl;
+
+my $handler = Autodia::Handler::Perl->New(\%Config);
+
+This creates a new handler using the Configuration hash to provide rules selected at the command line.
+
+=head1 ACCESS METHODS
+
+$handler->Parse(filename); # where filename includes full or relative path.
+
+This parses the named file and returns 1 if successful or 0 if the file could not be opened.
+
+$handler->output(); # any arguments are ignored.
+
+This outputs the Dia XML file according to the rules in the %Config hash passed at initialisation of the object.
+
+=cut
+
+
+
+
+
+
+@
+
+
+1.7
+log
+@@@ISA fix
+@
+text
+@d26 1
+a26 1
+# Constructor Methods
+d30 32
+d77 1
+a77 3
+
+    my $pkg_regexp = '[\w:]+';
+
+d92 2
+d95 1
+d97 1
+d105 14
+a118 6
+	if ($line =~ /^\s*package\s+($pkg_regexp)/) {
+	    my $className = $1;
+	    # create new class with name
+	    $Class = Autodia::Diagram::Class->new($className);
+	    # add class to diagram
+	    $Class = $Diagram->add_class($Class);
+d121 2
+a122 1
+	if ($line =~ /^\s*use\s+base\s+(?:q|qw|qq){0,1}\s*([\'\"\(\{\/\#])\s*(.*)\s*([\)\}\1]?)/ or $continue_base) {
+d124 2
+d127 1
+a127 1
+		warn "continuing base\n";
+d129 3
+a131 2
+		warn "base ctd : $continue_base\n";
+		warn "superclass : $superclass\n";
+d135 1
+a135 1
+		    warn "end of continued base\n";
+d138 2
+a139 2
+		warn "start of base\n";
+		warn "superclass : $superclass\n";
+d141 3
+a143 4
+		if ($superclass =~ /(.*)([\)\}\'\"])/) {
+		    $superclass = $1;
+		    $continue_base = 0;
+		    warn "base is only 1 line\n";
+d145 1
+a145 1
+		warn "continue base : $continue_base\n";
+d147 1
+a147 1
+	    warn "superclass : $superclass\n";
+d200 1
+a200 1
+		warn "pragma : $pragma .. fields : $fields\n";
+d203 1
+a203 1
+		    warn "fields ctd : $continue_fields\n";
+d214 1
+a214 1
+		    warn "continue fields : $continue_fields\n";
+d216 1
+a216 1
+		warn "fields : $fields\n";
+d220 1
+a220 1
+		    warn "fields : $field\n";
+d228 1
+d290 1
+a290 1
+		warn "ignoring empty \@@ISA \n";
+d298 1
+a298 1
+		warn "tangram parser : found start of fields for ",$Class->Name,"\n";
+d300 1
+a300 1
+		warn "field_string : $self->{_field_string}\n";
+d303 1
+a303 1
+		    warn "found end of fields for  ",$Class->Name,"\n";
+d310 1
+a310 1
+		    warn "found end of fields for  ",$Class->Name,"\n";
+d314 1
+a314 1
+		    warn "adding line to fields for  ",$Class->Name,"\n";
+d318 1
+a318 1
+		    warn "processing fields for ",$Class->Name,"\n";
+d323 1
+a323 1
+		    warn "fields : $_\n";
+d326 1
+a326 1
+		    warn Dumper(field_types=>%field_types);
+d328 1
+a328 1
+			warn "handling $field_type..\n";
+d335 1
+a335 1
+			    warn "qw fields : $fields\n";
+d341 1
+a341 1
+			warn Dumper(fields=>%fields);
+d343 2
+a344 2
+			    warn "found field : '$field' of type '$field_type' in (class ",$Class->Name,") : \n";
+			    my $attribute = { name=>$field, type=>$field_type };
+d363 52
+d424 1
+d441 1
+d451 1
+a451 1
+
+d522 2
+@
+
+
+1.6
+log
+@now handles base or fields in '' or ""
+also handles multiline but not heredoc
+@
+text
+@d210 2
+a211 1
+      
+@
+
+
+1.5
+log
+@fixed to work with scripts and to complain less
+@
+text
+@d60 3
+d69 1
+d79 1
+a79 1
+	if ($line =~ /^\s*use\s+base\s+(?:q|qw){0,1}\s*([\(\{\/\#])\s*(.*)\s*[\)\}\1]/) {
+d81 22
+d153 21
+a173 4
+	    if ($componentName =~ /(fields|private|public)/) {
+		my $pragma = $1;
+		$line =~ /\sqw\((.*)\)/;
+		my @@fields = split(/\s+/,$1);
+d175 1
+@
+
+
+1.4
+log
+@fixed bug with attributes - using $1 where should use $2
+@
+text
+@d14 2
+d41 24
+a64 17
+  my $self     = shift;
+  my $fh       = shift;
+  my $filename = shift;
+  my $Diagram  = $self->{Diagram};
+
+  my $pkg_regexp = qr([\w:]+);
+
+  my $Class;
+
+  $self->{pod} = 0;
+
+  # parse through file looking for stuff
+  foreach my $line (<$fh>) {
+    chomp $line;
+    if ($self->_discard_line($line)) {
+      next;
+    }
+d66 8
+a73 8
+    # if line contains package name then parse for class name
+    if ($line =~ /^\s*package\s+($pkg_regexp)/) {
+      my $className = $1;
+      # create new class with name
+      $Class = Autodia::Diagram::Class->new($className);
+      # add class to diagram
+      $Class = $Diagram->add_class($Class);
+    }
+d75 2
+a76 2
+    if ($line =~ /^\s*use\s+base\s+(?:q|qw){0,1}\s*([\(\{\/\#])\s*(.*)\s*[\)\}\1]/) {
+      my $superclass = $2;
+d78 2
+a79 2
+      # check package exists before doing stuff
+      $self->_is_package(\$Class, $filename);
+d81 1
+a81 1
+      my @@superclasses = split(/[\s*,]/, $superclass);
+d83 26
+a108 21
+      foreach my $super (@@superclasses) # WHILE_SUPERCLASSES
+	{
+	  # discard if stopword
+	  next if ($super =~ /(?:exporter|autoloader)/i);
+	  # create superclass
+	  my $Superclass = Autodia::Diagram::Superclass->new($super);
+	  # add superclass to diagram
+
+	  my $exists_already = $Diagram->add_superclass($Superclass);
+#	  warn "already exists ? $exists_already \n";
+	  if (ref $exists_already) {
+	    $Superclass = $exists_already;
+	  }
+	  # create new inheritance
+	  my $Inheritance = Autodia::Diagram::Inheritance->new($Class, $Superclass);
+	  # add inheritance to superclass
+	  $Superclass->add_inheritance($Inheritance);
+	  # add inheritance to class
+	  $Class->add_inheritance($Inheritance);
+	  # add inheritance to diagram
+	  $Diagram->add_inheritance($Inheritance);
+a109 2
+      next;
+    }
+d111 51
+a161 44
+    # if line contains dependancy name then parse for module name
+    if ($line =~ /^\s*(use|require)\s+($pkg_regexp)/) {
+      my $componentName = $2;
+
+      # discard if stopword
+      next if ($componentName =~ /^(strict|vars|exporter|autoloader|warnings.*|constant.*|data::dumper|carp.*|overload|switch|\d|lib)$/i);
+
+      # check package exists before doing stuff
+      $self->_is_package(\$Class, $filename);
+
+
+      if ($componentName =~ /(fields|private|public)/) {
+	my $pragma = $1;
+	$line =~ /\sqw\((.*)\)/;
+	my @@fields = split(/\s+/,$1);
+	foreach my $field (@@fields) {
+	  my $attribute_visibility = ( $field =~ m/^\_/ ) ? 1 : 0;
+          unless ($pragma eq 'fields') { $attribute_visibility = ($pragma eq 'private' ) ? 1 : 0; }
+	  $Class->add_attribute({
+				 name => $field,
+				 visibility => $attribute_visibility,
+				}) unless ($field =~ /^\$/);
+	}
+      } else {
+	# create component
+	my $Component = Autodia::Diagram::Component->new($componentName);
+	# add component to diagram
+	my $exists = $Diagram->add_component($Component);
+
+	# replace component if redundant
+	if (ref $exists) {
+	  $Component = $exists;
+	}
+	# create new dependancy
+	my $Dependancy = Autodia::Diagram::Dependancy->new($Class, $Component);
+	# add dependancy to diagram
+	$Diagram->add_dependancy($Dependancy);
+	# add dependancy to class
+	$Class->add_dependancy($Dependancy);
+	# add dependancy to component
+	$Component->add_dependancy($Dependancy);
+	next;
+      }
+    }
+d163 3
+a165 3
+    # if ISA in line then extract templates/superclasses
+    if ($line =~ /^\s*\@@(?:\w+\:\:)*ISA\s*\=\s*(?:q|qw){0,1}\((.*)\)/) {
+      my $superclass = $1;
+d167 103
+a269 32
+#      warn "handling superclasses $1 with \@@ISA\n";
+#      warn "superclass line : $line \n";
+      if ($superclass) {
+	  # check package exists before doing stuff
+	  $self->_is_package(\$Class, $filename);
+
+	  my @@superclasses = split(" ", $superclass);
+
+	  foreach my $super (@@superclasses) # WHILE_SUPERCLASSES
+	  {
+	      # discard if stopword
+	      next if ($super =~ /(?:exporter|autoloader)/i || !$super);
+	      # create superclass
+	      my $Superclass = Autodia::Diagram::Superclass->new($super);
+	      # add superclass to diagram
+	      my $exists_already = $Diagram->add_superclass($Superclass);
+#	      warn "already exists ? $exists_already \n";
+	      if (ref $exists_already) {
+		  $Superclass = $exists_already;
+	      }
+	      # create new inheritance
+#	      warn "creating inheritance from superclass : $super\n";
+	      my $Inheritance = Autodia::Diagram::Inheritance->new($Class, $Superclass);
+	      # add inheritance to superclass
+	      $Superclass->add_inheritance($Inheritance);
+	      # add inheritance to class
+	      $Class->add_inheritance($Inheritance);
+	      # add inheritance to diagram
+	      $Diagram->add_inheritance($Inheritance);
+	  }
+      } else { warn "ignoring empty \@@ISA \n"; }
+  }
+d271 4
+a274 3
+    # if line contains sub then parse for method data
+    if ($line =~ /^\s*sub\s+?(\w+)/) {
+      my $subname = $1;
+d276 2
+a277 2
+      # check package exists before doing stuff
+      $self->_is_package(\$Class, $filename);
+d279 2
+a280 2
+      my %subroutine = ( "name" => $subname, );
+      $subroutine{"visibility"} = ($subroutine{"name"} =~ m/^\_/) ? 1 : 0;
+d282 3
+a284 3
+      # NOTE : perl doesn't provide named parameters
+      # if we wanted to be clever we could count the parameters
+      # see Autodia::Handler::PHP for an example of parameter handling
+d286 2
+a287 2
+      $Class->add_operation(\%subroutine);
+    }
+d289 10
+a298 10
+    # if line contains object attributes parse add to class
+    if ($line =~ m/\$(class|self|this)\-\>\{['"]*(.*?)["']*}/) {
+      my $attribute_name = $2;
+      my $attribute_visibility = ( $attribute_name =~ m/^\_/ ) ? 1 : 0;
+
+      $Class->add_attribute({
+			     name => $attribute_name,
+			     visibility => $attribute_visibility,
+			    }) unless ($attribute_name =~ /^\$/);
+    }
+d300 6
+a305 6
+    # add this block once can handle being entering & exiting subs:
+    # if line contains possible args to method add them to method
+    #	if (($line =~ m/^\([\w\s]+\)\s*\=\s*\@@\_\;\s*$/) && ())
+    #	  {
+    #	    print "should be adding these arguments to sub : $1\n";
+    #	  }
+d307 1
+a307 1
+  }
+d309 3
+a311 3
+  $self->{Diagram} = $Diagram;
+  close $fh;
+  return;
+@
+
+
+1.3
+log
+@fixes
+@
+text
+@d200 1
+a200 1
+      my $attribute_name = $1;
+@
+
+
+1.2
+log
+@small use base fix
+@
+text
+@d63 1
+a63 1
+      $Diagram->add_class($Class);
+d66 2
+a67 2
+    if ($line =~ /^\s*use\s+base\s+(?:q|qw){0,1}\s*[\(\{\/\#]\s*(.*)\s*[\(\{\/\#]/) {
+      my $superclass = $1;
+d72 1
+a72 1
+      my @@superclasses = split(" ", $superclass);
+d83 1
+a108 1
+      if ($componentName eq 'fields') {
+d110 2
+d116 1
+a116 1
+
+d147 30
+a176 16
+
+      # check package exists before doing stuff
+      $self->_is_package(\$Class, $filename);
+
+      my @@superclasses = split(" ", $superclass);
+
+      foreach my $super (@@superclasses) # WHILE_SUPERCLASSES
+	{
+	  # discard if stopword
+	  next if ($super =~ /(?:exporter|autoloader)/i);
+	  # create superclass
+	  my $Superclass = Autodia::Diagram::Superclass->new($super);
+	  # add superclass to diagram
+	  my $exists_already = $Diagram->add_superclass($Superclass);
+	  if (ref $exists_already) {
+	    $Superclass = $exists_already;
+d178 2
+a179 10
+	  # create new inheritance
+	  my $Inheritance = Autodia::Diagram::Inheritance->new($Class, $Superclass);
+	  # add inheritance to superclass
+	  $Superclass->add_inheritance($Inheritance);
+	  # add inheritance to class
+	  $Class->add_inheritance($Inheritance);
+	  # add inheritance to diagram
+	  $Diagram->add_inheritance($Inheritance);
+	}
+    }
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d44 2
+d58 1
+a58 1
+    if ($line =~ /^\s*package\s+([A-Za-z0-9\:]+)/) {
+d66 1
+a66 1
+    if ($line =~ /^\s*use\s+base\s+(?:q|qw){0,1}\((.*)\)/) {
+d99 1
+a99 1
+    if ($line =~ /^\s*(use|require)\s+([A-Za-z0-9\:]+)/) {
+@
