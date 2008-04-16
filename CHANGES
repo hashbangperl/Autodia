@@ -1,8 +1,9 @@
 Changes to AutoDia
 ------------------
-version 2.06 7/03/2008
+version 2.06 16/04/2008
 - added support for DBIx::Class to perl handler
 - added basic perl test template
+- applied fix for undefined array when graphing layout
 
 version 2.05 1/11/2007
 - set default output path for TT to .
