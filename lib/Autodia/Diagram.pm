@@ -1185,7 +1185,7 @@ sub _layout_dia_new {
 		  plot_branch($self,$nodes{$child},$childpos,$side);
 		  $childpos += $child_increment;
 	      }
-	  } elsif ( scalar @{$rows[1]} && $done2ndrow == 0) {
+	  } elsif ( defined $rows[1] && scalar @{$rows[1]} && $done2ndrow == 0) {
 	      $done2ndrow = 1;
 	      foreach my $node ( @{$rows[1]} ) {
 		  #		warn "handling node in next row\n";
