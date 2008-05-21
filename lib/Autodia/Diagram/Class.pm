@@ -71,27 +71,25 @@ sub new
 ################
 # Access Methods
 
-sub Dependancies
-{
+sub Dependancies {
   my $self = shift;
-  if (defined $self->{"dependancies"})
-    {
-      my @dependancies = @{$self->{"dependancies"}};
-      return @dependancies;
-    }
-  else
-    { return; }
+  if (defined $self->{"dependancies"}) {
+    my @dependancies = @{$self->{"dependancies"}};
+    return @dependancies;
+  } else {
+    return;
+  }
 }
 
 
-sub add_dependancy
-{
+sub add_dependancy {
   my $self = shift;
   my $new_dependancy = shift;
   my @dependancies;
 
-  if (defined $self->{"dependancies"})
-  { @dependancies = @{$self->{"dependancies"}}; }
+  if (defined $self->{"dependancies"}) {
+    @dependancies = @{$self->{"dependancies"}};
+  }
 
   push(@dependancies, $new_dependancy);
   $self->{"dependancies"} = \@dependancies;
@@ -99,27 +97,23 @@ sub add_dependancy
   return scalar(@dependancies);
 }
 
-sub Inheritances
-{
+sub Inheritances {
   my $self = shift;
-
-  if (defined $self->{"inheritances"})
-    {
-      my @inheritances = @{$self->{"inheritances"}};
-      return @inheritances;
-    }
-  else
-    { return; }
+  if (ref $self->{"inheritances"}) {
+    return $self->{"inheritances"};
+  } else {
+    return undef;
+  }
 }
 
-sub add_inheritance
-{
+sub add_inheritance {
   my $self = shift;
   my $new_inheritance = shift;
   my @inheritances;
 
-  if (defined $self->{"inheritances"})
-  { @inheritances = @{$self->{"inheritances"}}; }
+  if (defined $self->{"inheritances"}) {
+    @inheritances = @{$self->{"inheritances"}};
+  }
 
   push(@inheritances, $new_inheritance);
   $self->{"inheritances"} = \@inheritances;
@@ -128,108 +122,125 @@ sub add_inheritance
   return scalar(@inheritances);
 }
 
-sub Attributes
-{
-  my $self = shift;
 
-  if (defined $self->{"attributes"})
-    {
-      my @attributes = @{$self->{"attributes"}};
-      return \@attributes;
-    }
-  else { return; }
+sub Relations {
+  my $self = shift;
+  return (ref $self->{"relations"}) ? @{$self->{"relations"}} : () ;
 }
 
-sub add_attribute
-{
+sub add_relation {
+  my $self = shift;
+  my $new_relation = shift;
+  $self->{relations} ||= [];
+  push(@{$self->{relations}}, $new_relation);
+  return 1;
+}
+
+
+sub Attributes {
+  my $self = shift;
+
+  if (defined $self->{"attributes"}) {
+    my @attributes = @{$self->{"attributes"}};
+    return \@attributes;
+  } else {
+    return;
+  }
+}
+
+sub add_attribute {
   my $self = shift;
   my %new_attribute = %{shift()};
 
   # discard new attribute if duplicate
   my $discard = 0;
-  foreach my $attribute ( @{$self->{"attributes"}} )
-  {
-      my %attribute = %$attribute;
-      if ($attribute{name} eq $new_attribute{name})
-      { $discard = 1; }
+  foreach my $attribute ( @{$self->{"attributes"}} ) {
+    my %attribute = %$attribute;
+    if ($attribute{name} eq $new_attribute{name}) {
+      $discard = 1;
+    }
   }
 
-  unless ($discard)
-  {
-      push (@{$self->{"attributes"}},\%new_attribute);
-      $self->_set_updated("attributes");
-      $self->_update;
+  unless ($discard) {
+    push (@{$self->{"attributes"}},\%new_attribute);
+    $self->_set_updated("attributes");
+    $self->_update;
   }
 
   return scalar(@{$self->{"attributes"}});
 }
 
-sub has_child
-{
-    my $self   = shift;
-    my $child  = shift;
-    my $return = 0;
+sub has_child {
+  my $self   = shift;
+  my $child  = shift;
+  my $return = 0;
 
-    if (defined $child) { $self->{"child"} = $child;  }
-    else { $return = $self->{"child"}; }
+  if (defined $child) {
+    $self->{"child"} = $child;
+  } else {
+    $return = $self->{"child"};
+  }
 }
 
-sub Parent
-{
-    my $self   = shift;
-    my $parent = shift;
-    my $return = 0;
+sub Parent {
+  my $self   = shift;
+  my $parent = shift;
+  my $return = 0;
 
-    if (defined $parent) { $self->{"parent"} = $parent;  }
-    else { $return = $self->{"parent"}; }
+  if (defined $parent) {
+    $self->{"parent"} = $parent;
+  } else {
+    $return = $self->{"parent"};
+  }
 }
 
-sub replace_superclass
-{
-    my $self       = shift;
-    my $superclass = shift;
+sub replace_superclass {
+  my $self       = shift;
+  my $superclass = shift;
 
-    if (ref ($superclass->Inheritances))
-      {
-	my @inheritances = @{$superclass->Inheritances};
-	foreach my $inheritance (@inheritances)
-	  { $inheritance->Parent($self->Id); }
-      }
-    return 1;
-}
-
-sub replace_component
-{
-  my $self = shift;
-  my $component = shift;
-
-  if (ref ($component->Dependancies) )
-    {
-      my @dependancies = $component->Dependancies;
-      foreach my $dependancy (@dependancies)
-	{
-	  $dependancy->Parent($self->Id);
-	}
+  if (ref ($superclass->Inheritances)) {
+    my @inheritances = @{$superclass->Inheritances};
+    foreach my $inheritance (@inheritances) {
+      $inheritance->Parent($self->Id);
     }
+  }
+
+  if (ref ($superclass->Relations)) {
+    my @relations = @{$superclass->Relations};
+    foreach my $relation (@relations) {
+      $relation->Parent($self->Id);
+    }
+  }
 
   return 1;
 }
 
-sub Operations
-{
+sub replace_component {
   my $self = shift;
+  my $component = shift;
 
-  if (defined $self->{"operations"})
-    {
-      my @operations = $self->{"operations"};
-      return @operations;
+  if (ref ($component->Dependancies) ) {
+    my @dependancies = $component->Dependancies;
+    foreach my $dependancy (@dependancies) {
+      $dependancy->Parent($self->Id);
     }
-  else
-    { return; }
+  }
+
+  return 1;
 }
 
-sub add_operation
-{
+sub Operations {
+  my $self = shift;
+
+  if (defined $self->{"operations"}) {
+    my @operations = $self->{"operations"};
+    return @operations;
+  } else {
+    return;
+  }
+}
+
+sub add_operation {
   my $self = shift;
   my %operation = %{shift()};
   push (@{$self->{"operations"}},\%operation);
@@ -245,8 +256,8 @@ sub add_operation
 ##################
 # Internal Methods
 
-sub _initialise # over-rides method in DiagramObject
-{
+# over-rides method in DiagramObject
+sub _initialise {
   my $self = shift;
   $self->{"name"} = shift;
   $self->{"type"} = "class";
@@ -260,40 +271,35 @@ sub _initialise # over-rides method in DiagramObject
   return 1;
 }
 
-sub _update
-  {
-    my $self = shift;
+sub _update {
+  my $self = shift;
 
-    my %updated = %{$self->{_updated}};
+  my %updated = %{$self->{_updated}};
 
-    if ($updated{"attributes"})
-    {
-	my $longest_element = ($self->{"width"} -1) / 0.5;
-	my @attributes = @{$self->{"attributes"}};
-	my $last_element = pop @attributes;
-	if (length $last_element > $longest_element)
-	{
-	    $self->{"width"} = (length $last_element * 0.5) + 1;
-	}
-	$self->{height} += 0.8;
+  if ($updated{"attributes"}) {
+    my $longest_element = ($self->{"width"} -1) / 0.5;
+    my @attributes = @{$self->{"attributes"}};
+    my $last_element = pop @attributes;
+    if (length $last_element > $longest_element) {
+      $self->{"width"} = (length $last_element * 0.5) + 1;
     }
-
-    if ($updated{"operations"})
-    {
-	my $longest_element = ($self->{width} -1) / 0.5;
-	my @operations = @{$self->{"operations"}};
-	my $last_element = pop @operations;
-	if (length $last_element > $longest_element)
-	{
-	    $self->{"width"} = (length $last_element * 0.5) + 1;
-	}
-	$self->{"height"} += 0.8;
-    }
-
-    undef $self->{"_updated"};
-
-    return 1;
+    $self->{height} += 0.8;
   }
+
+  if ($updated{"operations"}) {
+    my $longest_element = ($self->{width} -1) / 0.5;
+    my @operations = @{$self->{"operations"}};
+    my $last_element = pop @operations;
+    if (length $last_element > $longest_element) {
+      $self->{"width"} = (length $last_element * 0.5) + 1;
+    }
+    $self->{"height"} += 0.8;
+  }
+
+  undef $self->{"_updated"};
+
+  return 1;
+}
 
 
 1;

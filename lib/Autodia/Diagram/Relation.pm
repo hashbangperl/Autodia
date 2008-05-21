@@ -5,7 +5,7 @@
 # This is free software, and you are welcome to redistribute   #
 # it under certain conditions; see COPYING file for details    #
 ################################################################
-package Autodia::Diagram::Inheritance;
+package Autodia::Diagram::Relation;
 
 use strict;
 
@@ -16,7 +16,7 @@ use Autodia::Diagram::Object;
 
 @ISA = qw(Autodia::Diagram::Object);
 
-my $inheritance_count = 0;
+my $relation_count = 0;
 
 #--------------------------------------------------------------------
 # Constructor Methods
@@ -24,60 +24,48 @@ my $inheritance_count = 0;
 sub new
 {
   my $class = shift;
-  my $child = shift;
-  my $parent = shift;
-  my $DiagramInheritance = {};
+  my $left = shift;
+  my $right = shift;
+  my $DiagramRelation = {};
 
-  bless ($DiagramInheritance, ref($class) || $class);
-  $DiagramInheritance->_initialise($child, $parent);
+  bless ($DiagramRelation, ref($class) || $class);
+  $DiagramRelation->_initialise($left, $right);
 
-  return $DiagramInheritance;
+  return $DiagramRelation;
 }
-
 
 #--------------------------------------------------------------------
 # Access Methods
 
-sub Parent
-{
+sub Left {
   my $self = shift;
-  my $parent = shift;
-  my $return_val = 1;
+  my $left = shift;
 
-  if (defined $parent)
-  { $self->{"parent"} = $parent; }
-  else
-  { $return_val = $self->{"parent"}; }
-
-  return $return_val;
+  if (defined $left) {
+      $self->{"left"} = $left;
+  }
+  return $self->{"left"};
 }
 
-sub Child
-{
+sub Right {
   my $self = shift;
-  my $child = shift;
-  my $return_val = 1;
+  my $right = shift;
 
-  if (defined $child)
-  { $self->{"child"} = $child; }
-  else
-  { $return_val = $self->{"child"}; }
-
-  return $return_val;
+  if (defined $right){
+    $self->{"_right"} = $right;
+    $self->{"right"} = $right->Id;
+  }
+  return $self->{"right"};
 }
 
-sub Name
-{
+sub Name {
   my $self = shift;
   my $name = shift;
 
-  if (defined $name)
-    {
-      $self->{"name"} = $name;
-      return 1;
-    }
-  else
-    { return $self->{"name"}; }
+  if (defined $name) {
+    $self->{"name"} = $name;
+  }
+  return $self->{"name"};
 }
 
 
@@ -113,13 +101,13 @@ sub Reposition
 {
   my $self = shift;
 
-  my $child =  $self->{"_child"};
+  my $right =  $self->{"_right"};
 
-  my ($right_x,$bottom_y) = split (",",$child->TopLeftPos);
+  my ($right_x,$bottom_y) = split (",",$right->TopLeftPos);
   my $mid_y = $bottom_y - 1.5;
   my $top_y= $mid_y - 1.5;
 
-  $right_x += 2 + ($child->Width / 2);
+  $right_x += 2 + ($right->Width / 2);
   my $left_x = $right_x - 5;
 
   $self->{"left_x"} = $left_x;
@@ -138,15 +126,15 @@ sub Reposition
 sub _initialise # over-rides method in DiagramObject
 {
   my $self = shift;
-  my $child = shift;
-  my $parent = shift;
+  my $left = shift;
+  my $right = shift;
 
-  $self->{"_child"} = $child;
-  $self->{"child"} = $child->Id;
-  $self->{"type"} = "inheritance";
-  $self->{"_parent"} = $parent;
-  $self->{"parent"} = $parent->Id;
-  $self->{"name"} = $self->{"parent"}."-".$self->{"child"};
+  $self->{"_right"} = $right;
+  $self->{"right"} = $right->Id;
+  $self->{"type"} = "relation";
+  $self->{"_left"} = $left;
+  $self->{"left"} = $left->Id;
+  $self->{"name"} = $self->{"left"}."-".$self->{"right"};
 
   return 1;
 }
@@ -159,10 +147,3 @@ sub _update # over-rides method in DiagramObject
   }
 
 1;
-
-##############################################################
-
-=head1
-
-=cut
-

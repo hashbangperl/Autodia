@@ -1,5 +1,11 @@
 Changes to AutoDia
 ------------------
+version 2.07 20/05/2008
+- default output now autodia.out.dia (workaround for bug in Dia 0.96)
+- added new Relation relationship
+- several fixes to DBI handler
+- added undirected option for GraphViz
+
 version 2.06 16/04/2008
 - added support for DBIx::Class to perl handler
 - added basic perl test template

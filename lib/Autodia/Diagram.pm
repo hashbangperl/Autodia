@@ -27,6 +27,7 @@ use Autodia::Diagram::Component;
 use Autodia::Diagram::Superclass;
 use Autodia::Diagram::Dependancy;
 use Autodia::Diagram::Inheritance;
+use Autodia::Diagram::Relation;
 
 my %dot_filetypes = (
 		     gif => 'as_gif',
@@ -71,6 +72,7 @@ sub new
   my $config_ref = shift;
   my $Diagram = {};
   bless ($Diagram, ref($class) || $class);
+  $Diagram->directed(1);
   $Diagram->_initialise($config_ref);
   return $Diagram;
 }
@@ -79,7 +81,7 @@ sub new
 
 To get a collection of a objects of a certain type you use the method of the same name. ie $Diagram->Classes() returns an array of 'class' objects.
 
-The methods available are Classes(), Components(), Superclasses(), Inheritances(), and Dependancies(); These are all called in the template to get the collections of objects to loop through.
+The methods available are Classes(), Components(), Superclasses(), Inheritances(), Relations(), and Dependancies(); These are all called in the template to get the collections of objects to loop through.
 
 To add an object to the diagram. You call the add_<object type> method, for example $Diagram->add_class($class_name), passing the name of the object in the case of Class, Superclass and Component but not Inheritance or Dependancy which have their names generated automagically.
 
@@ -97,6 +99,14 @@ The diagram is laid out and output to a file using the export_xml() method.
 
 ################
 # Access Methods
+
+sub directed {
+    my $self = shift;
+    my $value = shift;
+    $self->{directed} = $value if (defined $value);
+    $self->{directed} ||= 0;
+    return $self->{directed};
+}
 
 sub add_inputfile {
     my $self = shift;
@@ -123,13 +133,22 @@ sub add_dependancy
     return 1;
 }
 
-sub add_inheritance
-{
+sub add_inheritance {
     my $self = shift;
     my $inheritance = shift;
 
     $self->_package_add($inheritance);
     $inheritance->Set_Id($self->_object_count);
+
+    return 1;
+}
+
+sub add_relation {
+    my $self = shift;
+    my $relation = shift;
+
+    $self->_package_add($relation);
+    $relation->Set_Id($self->_object_count);
 
     return 1;
 }
@@ -249,9 +268,19 @@ sub remove_duplicates
 		my $superclass = $self->{"packages"}{"superclass"}{$class->Name};
 		$superclass->Redundant;
 		$self->_package_remove($superclass);
-		foreach my $inheritance ($superclass->Inheritances)
-		  { $inheritance->Parent($class->Id); }
+		foreach my $inheritance ($superclass->Inheritances) {
+		    if (ref($inheritance)) {
+			$inheritance->Parent($class->Id); 
+		    } else {
+			warn "problem with inheritance : $inheritance - class : ",$class->Name,"\n";
+		    }
+		}
 		$class->has_child(scalar $superclass->Inheritances);
+
+		foreach my $relation ($superclass->Relations) {
+		    $relation->Right($class);
+		}
+
 	      }
 
 	    # if a component exists with the same name as the class
@@ -367,6 +396,28 @@ sub Inheritances
     return \@inheritances;
   }
 
+sub Relations {
+    my $self = shift;
+
+    unless (defined $self->{"packages"}{"relation"}) {
+	print STDERR "Diagram.pm : Relations : no Relations to be printed - ignoring..\n";
+	return 0;
+    }
+
+    my @relations;
+    my %relations = %{$self->{"packages"}{"relation"}};
+    my @keys = keys %relations;
+ 
+
+    my $i = 0;
+    foreach my $key (@keys)  {
+      $relations[$i++] = $relations{$key};
+    }
+
+    return \@relations;
+  }
+
+
 sub Dependancies
   {
     my $self = shift;
@@ -407,7 +458,10 @@ sub export_graphviz
 
     $output_filename =~ s/\.[^\.]+$/.$extension/;
 
-    my $g = GraphViz->new();
+    my %args = (directed => $self->directed);
+    $args{layout} = 'neato' unless ($self->directed);
+    $args{overlap} = 'scalexy' unless ($self->directed);
+    my $g = GraphViz->new( %args );
 
     my %nodes = ();
 
@@ -484,15 +538,23 @@ sub export_graphviz
 	    }
 	}
     }
+
+
     my $inheritances = $self->Inheritances;
     if (ref $inheritances) {
       foreach my $Inheritance (@$inheritances) {
 	  next unless ($nodes{$Inheritance->Parent});
 	  #	warn "inheritance parent :", $Inheritance->Parent, " child :", $Inheritance->Child, "\n";
-	  $g->add_edge(
-		       $nodes{$Inheritance->Parent}=>$nodes{$Inheritance->Child},
-		       dir=>'back',
-		      );
+	  $g->add_edge($nodes{$Inheritance->Parent} => $nodes{$Inheritance->Child}, dir => 'back');
+      }
+    }
+
+    my $relations = $self->Relations;
+    if (ref $relations) {
+      foreach my $Relation (@$relations) {
+	  next unless ($nodes{$Relation->Left});
+	  my %edge_args = ($nodes{$Relation->Left} => $nodes{$Relation->Right});
+	  $g->add_edge(%edge_args);      
       }
     }
 
@@ -515,10 +577,7 @@ sub export_graphviz
       foreach my $Dependancy (@$dependancies) {
 	  #	warn "dependancy parent ", $Dependancy->Parent, " child :", $Dependancy->Child, "\n";
 	  next unless ($nodes{$Dependancy->Parent});
-	  $g->add_edge(
-		       $nodes{$Dependancy->Parent}=>$nodes{$Dependancy->Child},
-		       dir=>'back', style=>'dashed'
-		      );
+	  $g->add_edge($nodes{$Dependancy->Parent}=>$nodes{$Dependancy->Child}, dir => 'back', style=>'dashed');
       }
     }
 
@@ -647,6 +706,16 @@ sub export_springgraph
 	}
     }
 
+    my $relations = $self->Relations;
+    if (ref $relations) {
+      foreach my $Relation (@$relations) {
+	  next unless ($nodes{$Relation->Left});
+	  #	warn "relation left :", $Relation->Left, " right :", $Relation->Right, "\n";
+	  my %edge_args = ($nodes{$Relation->Left} => $nodes{$Relation->Right}, style => 'dotted');
+	  $g->add_edge(%edge_args);      
+      }
+    }
+
     unless ($config{skip_packages}) {
 	my $components = $self->Components;
 	if (ref $components) {
@@ -762,6 +831,17 @@ sub export_vcg {
 			);
       }
   }
+
+    my $relations = $self->Relations;
+    if (ref $relations) {
+	foreach my $Relation (@$relations) {
+	    next unless ($nodes{$Relation->Left});
+	    #	warn "relation left :", $Relation->Left, " right :", $Relation->Right, "\n";
+	    my %edge_args = (source => $nodes{$Relation->Left}, target => $nodes{$Relation->Right});
+	    $vcg->add_edge(%edge_args);      
+	}
+    }
+
 
   unless ($config{skip_packages}) {
       my $components = $self->Components;
@@ -1080,6 +1160,14 @@ sub _layout_dia_new {
     }
   }
 
+  # add relation edges
+  my $relations = $self->Relations;
+  if (ref $relations) {
+    foreach my $Relation (@$relations) {
+      push (@edges, { to => $Relation->Left, from => $Relation->Right  });
+    }
+  }
+
   # first pass (build network of edges to and from each node)
   foreach my $edge (@edges) {
 #    warn Dumper (edge=>$edge) unless ($edge->{from} && $edge->{to});
@@ -1234,6 +1322,10 @@ sub _layout_dia_new {
 
   if (ref $self->Inheritances)
     { push(@relationships, @{$self->Inheritances}); }
+
+  if (ref $self->Relations)
+    { push(@relationships, @{$self->Relations}); }
+
 
   foreach my $relationship (@relationships)
     { $relationship->Reposition; }
@@ -2129,6 +2221,9 @@ sub get_default_template {
      <dia:enum val="0"/>
      <dia:enum val="1"/>
    </dia:attribute>
+   <dia:attribute name="autorouting">
+      <dia:boolean val="true"/>
+   </dia:attribute>
    <dia:attribute name="name">
      <dia:string/>
    </dia:attribute>
@@ -2141,6 +2236,79 @@ sub get_default_template {
     </dia:connections>
  </dia:object>
 [% END %]
+
+[% SET relations = diagram.Relations %]
+[% FOREACH relation = relations %]
+    <dia:object type="UML - Association" version="1" id="[% relation.Id %]">
+      <dia:attribute name="obj_pos">
+        <dia:point val="[% relation.Orth_Top_Left %]"/>
+      </dia:attribute>
+      <dia:attribute name="obj_bb">
+        <dia:rectangle val="[% relation.Orth_Top_Left %];[% relation.Orth_Bottom_Right %]"/>
+      </dia:attribute>
+      <dia:attribute name="orth_points">
+        <dia:point val="[% relation.Orth_Mid_Left %]"/>
+        <dia:point val="[% relation.Orth_Top_Left %]"/>
+        <dia:point val="[% relation.Orth_Bottom_Right %]"/>
+        <dia:point val="[% relation.Orth_Mid_Right %]"/>
+      </dia:attribute>
+      <dia:attribute name="orth_orient">
+         <dia:enum val="0"/>
+         <dia:enum val="1"/>
+         <dia:enum val="0"/>
+      </dia:attribute>
+      <dia:attribute name="autorouting">
+        <dia:boolean val="true"/>
+      </dia:attribute>
+      <dia:attribute name="name">
+        <dia:string>##</dia:string>
+      </dia:attribute>
+      <dia:attribute name="direction">
+        <dia:enum val="0"/>
+      </dia:attribute>
+      <dia:attribute name="ends">
+        <dia:composite>
+          <dia:attribute name="role">
+            <dia:string>##</dia:string>
+          </dia:attribute>
+          <dia:attribute name="multiplicity">
+            <dia:string>##</dia:string>
+          </dia:attribute>
+          <dia:attribute name="arrow">
+            <dia:boolean val="false"/>
+          </dia:attribute>
+          <dia:attribute name="aggregate">
+            <dia:enum val="0"/>
+          </dia:attribute>
+          <dia:attribute name="visibility">
+            <dia:enum val="0"/>
+          </dia:attribute>
+        </dia:composite>
+        <dia:composite>
+          <dia:attribute name="role">
+            <dia:string>##</dia:string>
+          </dia:attribute>
+          <dia:attribute name="multiplicity">
+            <dia:string>##</dia:string>
+          </dia:attribute>
+          <dia:attribute name="arrow">
+            <dia:boolean val="false"/>
+          </dia:attribute>
+          <dia:attribute name="aggregate">
+            <dia:enum val="0"/>
+          </dia:attribute>
+          <dia:attribute name="visibility">
+            <dia:enum val="0"/>
+          </dia:attribute>
+        </dia:composite>
+      </dia:attribute>
+      <dia:connections>
+        <dia:connection handle="0" to="O[% relation.left %]" connection="8"/>
+        <dia:connection handle="1" to="O[% relation.right %]" connection="8"/>
+      </dia:connections>
+    </dia:object>
+[% END %]
+
  </dia:layer>
 </dia:diagram>
 END_TEMPLATE
@@ -2165,6 +2333,8 @@ Autodia::Diagram::Superclass
 Autodia::Diagram::Component 
 
 Autodia::Diagram::Inheritance
+
+Autodia::Diagram::Relation
 
 Autodia::Diagram::Dependancy
 

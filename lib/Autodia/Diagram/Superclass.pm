@@ -37,18 +37,18 @@ sub new
 #--------------------------------------------------------------------
 # Access Methods
 
-sub Inheritances
+ sub Inheritances
 {
   my $self = shift;
 
-  if (exists $self->{"inheritances"})
-    {
-      my @inheritances = @{$self->{"inheritances"}};
-      return @inheritances;
-    }
-  else
-    { return -1; } # eek! this should surely have inheritances
+  my @inheritances = ();
+  if (ref $self->{"inheritances"}) {
+      @inheritances = @{$self->{"inheritances"}};
+  }
+  return @inheritances;
+
 }
+
 
 sub add_inheritance
 {
@@ -66,27 +66,37 @@ sub add_inheritance
   return scalar(@inheritances);
 }
 
-sub Redundant
-{
-    my $self = shift;
-    my $replacement = shift || 0;
 
-    if ($replacement)
-    {
-	if ($self->{"_redundant"})
-	{
-	    my $current_replacement = $self->{"_redundant"};
-	    return -1;
-	}
-	$self->{"_redundant"} = $replacement;
-	return 1;
-    }
-    $self->{_redundant} = 0;
-    return 0;
+sub Relations {
+  my $self = shift;
+  return (ref $self->{"relations"}) ? @{$self->{"relations"}} : () ;
 }
 
-sub Name
-{
+sub add_relation {
+  my $self = shift;
+  my $new_relation = shift;
+  $self->{relations} ||= [];
+  push(@{$self->{relations}}, $new_relation);
+  return 1;
+}
+
+sub Redundant {
+  my $self = shift;
+  my $replacement = shift || 0;
+
+  if ($replacement) {
+    if ($self->{"_redundant"}) {
+      my $current_replacement = $self->{"_redundant"};
+      return -1;
+    }
+    $self->{"_redundant"} = $replacement;
+    return 1;
+  }
+  $self->{_redundant} = 0;
+  return 0;
+}
+
+sub Name {
   my $self = shift;
   my $name = shift;
 

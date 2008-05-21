@@ -18,7 +18,7 @@ an interactive manner, and is a single user application for use from the
 console.
 
 AutoDia has been previously known as autodial. The output file is still 
-called autodia.out.xml by default. The executable files are now called
+called autodia.out.dia by default. The executable files are now called
 autodia.pl and autodia_java.pl, the only difference being an additional
 section near the start of the latter to enable INLINE::Java.
 

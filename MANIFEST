@@ -19,6 +19,7 @@ lib/Autodia/Diagram/Class.pm
 lib/Autodia/Diagram/Component.pm
 lib/Autodia/Diagram/Dependancy.pm
 lib/Autodia/Diagram/Inheritance.pm
+lib/Autodia/Diagram/Relation.pm
 lib/Autodia/Diagram/Object.pm
 lib/Autodia/Diagram/Superclass.pm
 lib/Autodia/Handler.pm

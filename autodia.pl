@@ -220,7 +220,7 @@ sub get_config {
     $config{filenames}    = \@filenames;
     $config{use_stdout}   = (defined $args{'O'}) ? 1 : 0;
     $config{templatefile} = (defined $args{'t'}) ? $args{'t'} : undef;
-    $config{outputfile}   = (defined $args{'o'}) ? $args{'o'} : "autodia.out.xml";
+    $config{outputfile}   = (defined $args{'o'}) ? $args{'o'} : "autodia.out.dia";
     $config{no_deps}      = (defined $args{'D'}) ? 1 : 0;
     $config{sort}         = (defined $args{'s'}) ? 1 : 0;
 
@@ -240,7 +240,7 @@ autodia.pl -d 'foo bar quz'       : use *pl/pm in directories foo, bar and quz a
 autodia.pl -d directory -r        : use *pl/pm in directory and its subdirectories as input files
 autodia.pl -d directory -F        : use files in directory but only one file per diagram
 autodia.pl -d directory -C        : use files in directory but skip CVS directories
-autodia.pl -o outfile.xml         : use outfile.xml as output file (otherwise uses autodial.out.xml)
+autodia.pl -o outfile.xml         : use outfile.xml as output file (otherwise uses autodial.out.dia)
 autodia.pl -O                     : output to stdout
 autodia.pl -l language            : parse source as language (ie: C) and look for appropriate filename extensions if also -d
 autodia.pl -t templatefile        : use templatefile as template (otherwise uses default)
@@ -304,7 +304,7 @@ Helpful information, links and news can be found at the autodia website -  http:
 =item C<autodia.pl -d directory -F        : use files in directory but only one file per diagram>
 =item C<autodia.pl -d directory -C        : use files in directory but skip CVS directories>
 
-=item C<autodia.pl -o outfile.xml         : use outfile.xml as output file (otherwise uses autodial.out.xml)>
+=item C<autodia.pl -o outfile.xml         : use outfile.xml as output file (otherwise uses autodial.out.dia)>
 
 =item C<autodia.pl -O                     : output to stdout>
 
