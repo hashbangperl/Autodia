@@ -458,9 +458,9 @@ sub export_graphviz
 
     $output_filename =~ s/\.[^\.]+$/.$extension/;
 
-    my %args = (directed => $self->directed);
-    $args{layout} = 'neato' unless ($self->directed);
-    $args{overlap} = 'scalexy' unless ($self->directed);
+    my %args = (directed => $self->directed, ratio => 'expand');
+#    $args{layout} = 'fdp' unless ($self->directed);
+    $args{overlap} = 'false' unless ($self->directed);
     my $g = GraphViz->new( %args );
 
     my %nodes = ();
