@@ -136,6 +136,10 @@ sub _initialise # over-rides method in DiagramObject
   $self->{"left"} = $left->Id;
   $self->{"name"} = $self->{"left"}."-".$self->{"right"};
 
+  # TODO:
+  # add left label and right label
+  # check for existing relationship between two objects, re-use that one if exists and set reverse label from that
+
   return 1;
 }
 

@@ -553,8 +553,8 @@ sub export_graphviz
     if (ref $relations) {
       foreach my $Relation (@$relations) {
 	  next unless ($nodes{$Relation->Left});
-	  my %edge_args = ($nodes{$Relation->Left} => $nodes{$Relation->Right});
-	  $g->add_edge(%edge_args);      
+	  my %edge_args = (dir => 'none', weight => 1.2 );
+	  $g->add_edge($nodes{$Relation->Left} => $nodes{$Relation->Right}, %edge_args);      
       }
     }
 

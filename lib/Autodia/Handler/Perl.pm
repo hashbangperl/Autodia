@@ -414,7 +414,7 @@ sub _parse {
 
 	}
 
-	# handle Class::DBI/Ima::DBI
+	# handle Class::DBI/Ima::DBI/Class::Accessor
 	if ($line =~ /->columns\(\s*All\s*=>\s*(.*)$/) {
 	  my $columns = $1;
 	  my @cols;
@@ -497,11 +497,51 @@ sub _parse {
 
       }
 
-      # if line is DBIx::Class metadata then parse out
+      # if line is DBIx::Class column metadata then parse out
       if ($self->{_dbix_class} && $line =~ /add_columns\s*\((.*)/) {
 	my $field_data = $1;
 	$field_data =~ s/#.*$//;
 	$self->{_dbix_class_columns} = "{ $field_data ";
+      }
+
+      # if line is DBIx::Class relationship then parse out
+      if ($line =~ /\-\>has_(many|one|)\s*\((.*)/ or $line =~ /\-\>(belongs_to|)\s*\((.*)/) {
+	my ($rel_type, $rel_data) = ($1,$2);
+	$rel_data =~ s/#.*$//;
+	my ($rel_name,$related_classname) = split(/\s*(?:\=\>|,)\s*/,$rel_data);
+	$related_classname =~ s/['"]//g;
+	my $Superclass = Autodia::Diagram::Superclass->new($related_classname);
+	my $exists_already = $self->{Diagram}->add_superclass($Superclass);
+	$Superclass = $exists_already if (ref $exists_already);
+
+	# create new relationship
+	my $Relationship = Autodia::Diagram::Relation->new($Class, $Superclass);
+	# add Relationship to superclass
+	$Superclass->add_relation($Relationship);
+	# add Relationship to class
+	$Class->add_relation($Relationship);
+	# add Relationship to diagram
+	$self->{Diagram}->add_relation($Relationship);
+      }
+
+#      __PACKAGE__->load_components(qw/ PK::Auto Core +Slando::Data/);
+      # if line is DBIx::Class component, then treat as superclass
+      if ($self->{_dbix_class} && $line =~ /\-\>load_components\s*\((.*)\)/) {
+	my $component_string = $1;
+	foreach my $component_name (grep (/^\+/ , ( eval $component_string ) )) {	    
+	    $component_name =~ s/['"]//g;
+	    my $Superclass = Autodia::Diagram::Superclass->new($component_name);
+	    my $exists_already = $self->{Diagram}->add_superclass($Superclass);
+	    $Superclass = $exists_already if (ref $exists_already);
+	    # create new inheritance
+	    my $Inheritance = Autodia::Diagram::Inheritance->new($Class, $Superclass);
+	    $Superclass->add_inheritance($Inheritance);
+	    # add inheritance to class
+	    $Class->add_inheritance($Inheritance);
+	    # add inheritance to diagram
+	    $self->{Diagram}->add_inheritance($Inheritance);
+	    
+	}
       }
 
       # if line is Object::InsideOut metadata then parse out
