@@ -75,7 +75,7 @@ my %perl = (
 BEGIN {
         use Exporter ();
         use vars qw($VERSION @ISA @EXPORT);
-        $VERSION = "2.07";
+        $VERSION = "2.08";
         @ISA = qw(Exporter);
         @EXPORT = qw(
 		     &getHandlers
