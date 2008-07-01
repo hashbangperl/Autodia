@@ -1,5 +1,10 @@
 Changes to AutoDia
 ------------------
+version 2.08 01/07/2008
+- fixed skiplist - moved to handlers from diagram
+- added concentration option to graphviz digraphs
+- removed Java support
+
 version 2.07 20/05/2008
 - default output now autodia.out.dia (workaround for bug in Dia 0.96)
 - added new Relation relationship

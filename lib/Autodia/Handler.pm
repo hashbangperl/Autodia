@@ -50,6 +50,24 @@ sub process {
   }
 }
 
+sub skip {
+  my ($self,$object_name) = @_;
+  my $skip = 0;
+  my $skip_list = $self->{Config}{skip_patterns};
+  if (ref $skip_list) {
+    foreach my $pattern (@$skip_list) {
+      chomp($pattern);
+      if ($object_name =~ m/$pattern/) {
+	warn "skipping $object_name : matches $pattern\n" unless ($self->{_config}{silent});
+	$skip = 1;
+	last;
+      }
+    }
+  }
+  return $skip;
+}
+
+
 sub output
   {
     my $self    = shift;

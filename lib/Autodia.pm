@@ -7,7 +7,7 @@ Autodia.pm - The configuration and Utility perl module for AutoDia.
 
 =head1 VERSION
 
-2.07
+2.08
 
 =head1 DESCRIPTION
 
@@ -17,7 +17,7 @@ from the presentation of the results.
 
 AutoDia is written in perl and defaults to the perl handler and file extension matching unless a language is specified using the -l switch.
 
-AutoDia requires Template Toolkit and Perl 5. Some handlers and templates may require additional software, for example the Java SDK for the java handler.
+AutoDia requires Template Toolkit and Perl 5. Some handlers and templates may require additional software.
 
 Helpful information, links and news can be found at the autodia website - http://www.aarontrevena.co.uk/opensource/autodia/
 
@@ -99,7 +99,6 @@ sub getHandlers
 		    'c++'       => 'Autodia::Handler::Cpp',
 		    "csharp" => 'Autodia::Handler::CSharp',
 		    "cpp"	=> 'Autodia::Handler::Cpp',
-		    "java"      => 'Autodia::Handler::Java',
 		    "php"	=> 'Autodia::Handler::PHP',
 		    "dbi"       => 'Autodia::Handler::DBI',
 		    "dia"       => 'Autodia::Handler::dia',
@@ -145,14 +144,6 @@ sub getPattern
 			   ],
 	     );
 
-
-   my %java = (
-	       regex     => '\w+\.(java|class)$',
-	       wildcards => [
-			      "java", "class",
-			    ],
-	      );
-
   my %python = (
 		regex    => '\w+.py$',
 		wildcards => [ 'py', ]
@@ -176,7 +167,6 @@ sub getPattern
 		  'c++'  => \%cpp,
 		  "cpp"  => \%cpp,
 		  "csharp"  => \%csharp,
-		  "java" => \%java,
 		  "php"  => \%php,
 		  "dbi"  => {},
 		  "dia"  => \%dia,

@@ -82,6 +82,7 @@ sub _parse
 	      $self->{privacy} = "private";
 	      $self->{visibility} = 1;
 	      $classname =~ s/[\{\}]//g;
+	      last if ($self->skip($classname));
 	      $Class = Autodia::Diagram::Class->new($classname);
 	      $Diagram->add_class($Class);
 

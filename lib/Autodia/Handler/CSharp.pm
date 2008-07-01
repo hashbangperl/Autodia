@@ -89,6 +89,7 @@ sub _parse {
                 $self->{visibility} = 1;
                 $classname =~ s/[\{\}]//g;
 
+		last if ($self->skip($classname));
                 # we want to add on namespace
                 #if ($self->{namespace}) {
                 #    $classname = "$self->{namespace}.$classname";

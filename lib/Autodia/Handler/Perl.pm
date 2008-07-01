@@ -135,6 +135,7 @@ sub _parse {
 
 	  $continue_package = 0;
 	  my $className = $1;
+	  last if ($self->skip($className));
 	  # create new class with name
 	  $Class = Autodia::Diagram::Class->new($className);
 	  # add class to diagram

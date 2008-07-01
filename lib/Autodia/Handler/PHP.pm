@@ -85,6 +85,7 @@ sub _parse
 	  $inclass = 1;
 	  $inclassparen = $up - $down;
 #	  print "Classname: $className matched on:\n$line\n";
+	  last if ($self->skip($className));
 	  $Class = Autodia::Diagram::Class->new($className);
 	  # add to diagram
 	  $Diagram->add_class($Class);

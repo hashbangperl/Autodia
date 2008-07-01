@@ -14,6 +14,6 @@ WriteMakefile(
 				# VCG	     => 0.4, # optional
 				XML::Simple  => 0,
 			    }, 
-    'EXE_FILES' => [ 'autodia.pl', 'autodia_java.pl' ],
+    'EXE_FILES' => [ 'autodia.pl' ],
     
 );

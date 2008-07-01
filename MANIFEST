@@ -8,11 +8,9 @@ MANIFEST
 README
 TODO
 autodia.pl
-autodia_java.pl
 Makefile.PL
 t/autodia.t
 t/pod.t
-t/pod_coverage.t
 lib/Autodia.pm
 lib/Autodia/Diagram.pm
 lib/Autodia/Diagram/Class.pm
@@ -24,7 +22,6 @@ lib/Autodia/Diagram/Object.pm
 lib/Autodia/Diagram/Superclass.pm
 lib/Autodia/Handler.pm
 lib/Autodia/Handler/Cpp.pm
-lib/Autodia/Handler/Java.pm
 lib/Autodia/Handler/Perl.pm
 lib/Autodia/Handler/PHP.pm
 lib/Autodia/Handler/DBI.pm

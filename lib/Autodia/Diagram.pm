@@ -458,9 +458,9 @@ sub export_graphviz
 
     $output_filename =~ s/\.[^\.]+$/.$extension/;
 
-    my %args = (directed => $self->directed, ratio => 'expand');
+    my %args = (directed => $self->directed, ratio => 'expand', concentrate => 1, splines=>'false', lines=>1);
 #    $args{layout} = 'fdp' unless ($self->directed);
-    $args{overlap} = 'false' unless ($self->directed);
+#    $args{overlap} = 'false' unless ($self->directed);
     my $g = GraphViz->new( %args );
 
     my %nodes = ();
@@ -468,8 +468,6 @@ sub export_graphviz
     my $classes = $self->Classes;
     if (ref $classes) { 
       foreach my $Class (@$classes) {
-
-	next if ($self->skip($Class));
 
 	my $node = '{'.$Class->Name."|";
 
@@ -527,7 +525,6 @@ sub export_graphviz
 	my $superclasses = $self->Superclasses;
 	if (ref $superclasses) {
 	    foreach my $Superclass (@$superclasses) {
-	      next if ($self->skip($Superclass));
 		#	warn "superclass name :", $Superclass->Name, " id :", $Superclass->Id, "\n";
 		my $node = $Superclass->Name;
 		$node=~ s/[\{\}]//g;
@@ -562,7 +559,6 @@ sub export_graphviz
 	my $components = $self->Components;
 	if (ref $components) {
 	    foreach my $Component (@$components) {
-	      next if ($self->skip($Component));
 		#	warn "component name :", $Component->Name, " id :", $Component->Id, "\n";
 		my $node = '{'.$Component->Name.'}';
 		#	warn "node : $node\n";
@@ -596,23 +592,6 @@ sub Warn {
     return;
 }
 
-sub skip {
-  my ($self,$object) = @_;
-  my $skip = 0;
-  my $skip_list = $self->{_config}{skip_patterns};
-  if (ref $skip_list) {
-    my $object_name = $object->Name;
-    foreach my $pattern (@$skip_list) {
-      chomp($pattern);
-      if ($object_name =~ m/$pattern/) {
-	warn "skipping $object_name : matches $pattern\n" unless ($self->{_config}{silent});
-	$skip = 1;
-	last;
-      }
-    }
-  }
-  return $skip;
-}
 
 ########################################################
 # export_springgraph - output to file via SpringGraph.pm

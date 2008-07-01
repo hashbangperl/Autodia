@@ -93,6 +93,7 @@ sub _parse {		# parses python source code
     if ( $line =~ /^class\s+(\w+).*:/ ) {
       my $classname = $1;
       $current_class = "$module_name.$classname";
+      last if ($self->skip($classname));
       $Class = Autodia::Diagram::Class->new("$module_name.$classname");
       $Diagram->add_class($Class);
       $aliases{$classname} = $Class;
