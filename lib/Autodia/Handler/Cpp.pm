@@ -190,7 +190,8 @@ sub _parse
 
 		  # check for simple declarations
 		  # space* const? space+ (namespace::)* type space* modifier? space+ name;
-		  if ($line =~ m/^\s*\w*?\s*((\w+\s*::\s*)*\w+\s*[\*&]?)\s*(\w+)\s*\;.*$/)        # Added support for pointers/refs/namespaces
+
+		  if ($line =~ m/^\s*\w*?\s*((\w+\s*::\s*)*[\w<>]+\s*[\*&]?)\s*(\w+)\s*\;.*$/)        # Added support for pointers/refs/namespaces
 		{
 		  my $name = $3;
 		  my $type = $1;
@@ -210,14 +211,14 @@ sub _parse
 	      # check for simple sub
 	      if ($line =~ m/^                       # start of line
                             \s*                      # whitespace
-                            (\w*?\s*?(\w+\s*::\s*)*\w*?\s*[\*&]?) # type of the method: $1. Added support for namespaces
+                            (\w*?\s*?(\w+\s*::\s*)*[\w<>]*?\s*[\*&]?) # type of the method: $1. Added support for namespaces
                             \s*                      # whitespace
-                            (~?\w+)                  # name of the method: $2
+                            (~?\w+)                  # name of the method: $3
                             \s*                      # whitespace
                             \(\s*                    # start of parameter list
-                            ([:\w\,\s\*=&\"]*)        # all parameters: $3
-                            (\)?)                    # may be an ending bracket: $4
-                            [\w\s=]*(;?)             # possibly end of signature $5
+                            ([:\w\,\s\*=&\"<>\\]*)   # all parameters: $4
+                            (\)?)                    # may be an ending bracket: $5
+                            [\w\s=]*(;?)             # possibly end of signature $6
                             .*$/x
 		 )
 		{
@@ -273,7 +274,7 @@ sub _parse
 
 		      if ($line =~ m/^                        # start of line
                                      \s*                      # whitespace
-			             ([:\w\,\|\s\*=&\"]*)      # all parameters: $1
+			             ([:\w\,\|\s\*=&\"<>\\]*) # all parameters: $1
                                      (\)?)                    # may be an ending bracket: $2
                                      [\w\s=]*(;?)             # possibly end of signature $3
                                      .*$/x)
@@ -303,7 +304,7 @@ sub _parse
 		  foreach my $parameter (@params)
 		    {
 		      $parameter =~ s/const\s+//;
-		      $parameter =~ m/\s*((\w+::)*\w+\s*[\*|\&]?)\s*(\w+)/ ;
+		      $parameter =~ m/\s*((\w+::)*[\w<>]+\s*[\*|\&]?)\s*(\w+)/ ;
 		      my ($type, $name) = ($1,$3);
 
 		      $type =~ s/\s//g;
@@ -342,7 +343,7 @@ sub _parse
 
 	      # if line starts with word,space,word then its a declaration (probably)
 	      # Broken.
-	      if ($line =~ m/\s*\w+\s+(\w+\s*::\s*)*\w+/i)
+	      if ($line =~ m/\s*[\w<>]+\s+(\w+\s*::\s*)*[\w<>]+/i)
 		{
 #		  print " probably found a declaration : $line\n";
 		  my @words = m/^(\w+)\s*[\(\,\;].*$/g;
@@ -360,7 +361,7 @@ sub _parse
 		    }
 
 		  # if next character is a ( then the line is a function declaration
-		  if ($rest =~ m|^\((\w+)\(.*(\;?)\s*$|)
+		  if ($rest =~ m|^\(([\w<>]+)\(.*(\;?)\s*$|)
 		    {
 #		      print "probably found a function : $line \n";
 		      my $params = $1;
