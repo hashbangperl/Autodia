@@ -1,5 +1,9 @@
 Changes to AutoDia
 ------------------
+
+version 2.09
+- added template and backslash support to C++ handler (patch provided by Patrick Wiggins)
+
 version 2.08 01/07/2008
 - fixed skiplist - moved to handlers from diagram
 - added concentration option to graphviz digraphs
