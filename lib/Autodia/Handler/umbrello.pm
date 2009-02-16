@@ -128,7 +128,7 @@ sub get_methods {
   foreach my $methodname (keys %{$class->{'UML:Operation'}}) {
       my $type = $class->{'UML:Operation'}{$methodname}{type};
       my $arguments = get_parameters($class->{'UML:Operation'}{$methodname}{'UML:Parameter'});
-      push(@$return,{name=>$methodname,type=>$type,Param=>$arguments, visibility=>0});
+      push(@$return,{name=>$methodname,type=>$type,Params=>$arguments, visibility=>0});
   }
   return $return;
 }

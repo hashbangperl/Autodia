@@ -83,7 +83,7 @@ sub _parse {		# parses python source code
       my $params = $2 || '';
       if ($params) {
 	  foreach (split(/\s*,\s*/,$params)) {
-	      push (@{$method{"Param"}},{Name => $_, Val => '',});
+	      push (@{$method{"Params"}},{Name => $_, Val => '',});
 	  }
       }
       $Class->add_operation(\%method);

@@ -295,7 +295,7 @@ sub _parse {
             #                     $pc++;
             #                 }
 
-            #                 $subroutine{"Param"} = \@parameters;
+            #                 $subroutine{"Params"} = \@parameters;
             #                 $Class->add_operation(\%subroutine);
 
    #                 # Now finished with parameters.  If there was no end

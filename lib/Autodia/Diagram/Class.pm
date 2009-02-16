@@ -60,10 +60,10 @@ sub new
 {
   my $class = shift;
   my $name = shift;
-  my $DiagramClass = {};
-  bless ($DiagramClass, ref($class) || $class);
-  $DiagramClass->_initialise($name);
-  return $DiagramClass;
+  my $self = {};
+  bless ($self, ref($class) || $class);
+  $self->_initialise($name);
+  return $self;
 }
 
 #-------------------------------------------------------------------------
@@ -242,13 +242,33 @@ sub Operations {
 
 sub add_operation {
   my $self = shift;
-  my %operation = %{shift()};
-  push (@{$self->{"operations"}},\%operation);
+  my $operation = shift();
+  $operation->{_id} = ( ref $self->{"operations"} ) ? scalar @{$self->{"operations"}} : 0 ;
+  push (@{$self->{"operations"}},$operation);
+  $self->{operation_index}{$operation->{name}} = $operation;
 
   $self->_set_updated("operations");
   $self->_update;
 
   return scalar(@{$self->{"operations"}});
+}
+
+sub get_operation {
+    my ($self, $name) = @_;
+    return $self->{operation_index}{$name};
+}
+
+sub update_operation {
+    my $self = shift;
+    my $operation = shift;
+    
+    $self->{"operations"}[$operation->{_id}] = $operation;
+    $self->{operation_index}{$operation->{name}} = $operation;
+
+    $self->_set_updated("operations");
+    $self->_update;
+
+    return;
 }
 
 #-----------------------------------------------------------------------
@@ -267,6 +287,7 @@ sub _initialise {
   $self->{"height"} = 2; # arbitary
   #$self->{"operations"} = [];
   #$self->{"attributes"} = [];
+  $self->{operation_index} = {};
 
   return 1;
 }

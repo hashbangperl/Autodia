@@ -86,7 +86,7 @@ sub _parse {
     # In addition, foreign keys, index columns, and unique columns were added as
     # operations as well. -jg
     # primary key(s)
-    #my $primary_key = { name=>'Primary Key', type=>'pk', Param=>[], visibility=>0, };
+    #my $primary_key = { name=>'Primary Key', type=>'pk', Params=>[], visibility=>0, };
 
     $tables{$tablename} = $Class;
 
@@ -110,7 +110,7 @@ sub _parse {
 ####
 sub _addPKOperation {
     my ($localClass , $localColumn) = @_;
-    $localClass->add_operation({name=>"Primary Key", type=>'pk', Param=>[{Name=>$localColumn, Type=>''}],
+    $localClass->add_operation({name=>"Primary Key", type=>'pk', Params=>[{Name=>$localColumn, Type=>''}],
         visibility=>0 });
 }
 
@@ -119,7 +119,7 @@ sub _addPKOperation {
 ####
 sub _addFKOperation {
     my ($localClass , $localFK, $localFKTable) = @_;
-    $localClass->add_operation({name=>"Foreign Key", type=>'fk', Param=>[{Name=>$localFK, Type=>$localFKTable}],
+    $localClass->add_operation({name=>"Foreign Key", type=>'fk', Params=>[{Name=>$localFK, Type=>$localFKTable}],
         visibility=>0 });
 }
 
@@ -128,7 +128,7 @@ sub _addFKOperation {
 ####
 sub _addIndexOperation {
     my ($localClass , $localColumn) = @_;
-    $localClass->add_operation({name=>"Indexed Column", type=>'ic', Param=>[{Name=>$localColumn, Type=>''}],
+    $localClass->add_operation({name=>"Indexed Column", type=>'ic', Params=>[{Name=>$localColumn, Type=>''}],
         visibility=>0 });
 }
 
@@ -137,7 +137,7 @@ sub _addIndexOperation {
 ####
 sub _addUniqueOperation {
     my ($localClass , $localColumn) = @_;
-    $localClass->add_operation({name=>"Unique Column", type=>'uc', Param=>[{Name=>$localColumn, Type=>''}],
+    $localClass->add_operation({name=>"Unique Column", type=>'uc', Params=>[{Name=>$localColumn, Type=>''}],
         visibility=>0 });
 }
 

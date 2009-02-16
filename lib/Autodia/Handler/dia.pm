@@ -155,7 +155,7 @@ sub get_methods {
       $type = 'void' if (ref $type);
       $type =~ s/#//g;
       my $arguments = get_parameters($method->{'dia:attribute'}{parameters}{'dia:composite'});
-      push(@$return,{name=>$name,type=>$type,Param=>$arguments, visibility=>0});
+      push(@$return,{name=>$name,type=>$type,Params=>$arguments, visibility=>0});
     }
   } elsif ($ref eq "HASH") {
     my $name = $methods->{'dia:attribute'}{name}{'dia:string'};
@@ -164,7 +164,7 @@ sub get_methods {
     $type = 'void' if (ref $type);
     $type =~ s/#//g;
     my $arguments = get_parameters($methods->{'dia:attribute'}{parameters}{'dia:composite'});
-    push(@$return,{name=>$name,type=>$type,Param=>$arguments, visibility=>0});
+    push(@$return,{name=>$name,type=>$type,Params=>$arguments, visibility=>0});
   }
   return $return;
 }

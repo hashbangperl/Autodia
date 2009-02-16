@@ -115,6 +115,8 @@ sub _parse {
     my $continue_package = 0;
     my $continue_cdbi_cols = 0;
 
+    my $last_sub;
+
     my $line_no = 0;
     foreach my $line (<$fh>) {
       $line_no++;
@@ -210,6 +212,7 @@ sub _parse {
 
 	# if line contains dependancy name then parse for module name
 	if ($line =~ /^\s*(use|require)\s+($pkg_regexp)/) {
+	    warn "found a module being used/requireed : $2\n";
 	    unless (ref $Class) {
 		# create new class with name
 		$Class = Autodia::Diagram::Class->new($filename);
@@ -245,9 +248,13 @@ sub _parse {
 	      next;
 	    }
 
+	    if ($componentName =~ /Params::Validate/) {
+		$self->{_params_validate} = 1;
+		warn "found Params::Validate\n";
+	    }
+
 	    # check package exists before doing stuff
 	    $self->_is_package(\$Class, $filename);
-
 
 	    if ($line =~ /\s*use\s+(fields|private|public)\s+(?:q|qw|qq){0,1}\s*([\'\"\(\{\/\#])\s*(.*)\s*([\)\}\1]?)/ or $continue_fields) {
 		my ($pragma,$fields) = ($1,$3);
@@ -302,6 +309,7 @@ sub _parse {
 		$Component->add_dependancy($Dependancy);
 		next;
 	    }
+	    
 	}
 
 	# if ISA in line then extract templates/superclasses
@@ -468,6 +476,52 @@ sub _parse {
 	}
 
 
+      # handle Params::Validate
+      if ($last_sub && $self->{_params_validate} && ( $line =~ m/validate(_pos)?\s*\(/ or $self->{_in_params_validate_arguments} )) {
+	  my $found_end = 0;
+	  warn "found params::validate for sub $last_sub \n line : $line\n";
+	  $self->{_in_params_validate_arguments} = 1;
+	  $self->{_in_params_validate_positional_arguments} = 1 if $line =~ m/validate_pos/ ;
+	  if ($line =~ m|\)\s*;|) {
+	      $found_end = 1;
+	      $line =~ s/\)\s*;.*//;
+	      warn "found end \n";
+	  } 
+	  $self->{_params_validate_arguments} .= $line;
+
+	  if ($found_end) { 
+	      my $validate_text = $self->{_params_validate_arguments};
+	      warn "found params::validate text : $validate_text\n";
+
+	      # process with eval ala data::dumper
+	      $validate_text =~ s/.*validate\w*\s*\(\s*\@_\s*,//;
+	      warn "evaluating params::validate text : $validate_text\n";
+	      my $params = eval $validate_text;
+	      warn Dumper $params;
+	      my $parameters = [];
+	      push (@$parameters, { Name => "(HASHREF)" }) unless ( $self->{_in_params_validate_positional_arguments} );
+	      foreach my $param_name (keys %$params) {
+		  my $parameter = { Name => $param_name };
+		  if (ref $params->{$param_name} && ( $params->{type} || $params->{isa} ) ) {
+		      $parameter->{Type} = $params->{type} || $params->{isa};
+		  }
+		  push (@$parameters, $parameter);
+	      }
+	      if (scalar @$parameters) {
+		  my $operation = $Class->get_operation($last_sub);
+		  $operation->{Params} ||= [];
+		  push (@{$operation->{Params}}, @$parameters);
+		  $Class->update_operation($operation);
+	      }
+	      
+	      delete $self->{_params_validate_arguments};
+	      $self->{_in_params_validate_arguments} = 0;
+	      $self->{_in_params_validate_positional_arguments} = 0;
+	  }
+      }
+
+      
+      # handle DBIx::Class
       if ($self->{_dbix_class_columns}) {
 	my $found_end = 0;
 	$line =~ s/#.*$//;
@@ -573,6 +627,8 @@ sub _parse {
 	    $self->_is_package(\$Class, $filename);
 
 	    $subname =~ s/^(.*?)['"]\..*$/${1}_xxxx/;
+
+	    $last_sub = $subname;
 
 	    my %subroutine = ( "name" => $subname, );
 	    $subroutine{"visibility"} = ($subroutine{"name"} =~ m/^\_/) ? 1 : 0;

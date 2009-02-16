@@ -261,7 +261,7 @@ sub _parse
 		    push @parameters, \%temphash;
 
 		  }
-		  $subroutine{"Param"} = \@parameters;
+		  $subroutine{"Params"} = \@parameters;
 		}
 #	    print Dumper(\%subroutine);
 	    $Class->add_operation(\%subroutine);

@@ -478,9 +478,9 @@ sub export_graphviz
 	    next if ($method->{visibility} == 1 && $config{public});
 	    my $method_string = ($method->{visibility} == 0) ? '+ ' : '- ';
 	    $method_string .= $method->{name}."(";
-	    if (ref $method->{"Param"} ) {
+	    if (ref $method->{"Params"} ) {
 	      my @args = ();
-	      foreach my $argument ( @{$method->{"Param"}} ) {
+	      foreach my $argument ( @{$method->{"Params"}} ) {
 		  push (@args, ((defined ($argument->{Type}) )? $argument->{Type} . " " . $argument->{Name} : $argument->{Name}));
 	      }
 	      $method_string .= join (", ",@args) if (scalar @args);
@@ -625,9 +625,9 @@ sub export_springgraph
 	    next if ($method->{visibility} == 1 && $config{public});
 	    my $method_string = ($method->{visibility} == 0) ? '+ ' : '- ';
 	    $method_string .= $method->{name}."(";
-	    if (ref $method->{"Param"} ) {
+	    if (ref $method->{"Params"} ) {
 	      my @args = ();
-	      foreach my $argument ( @{$method->{"Param"}} ) {
+	      foreach my $argument ( @{$method->{"Params"}} ) {
 		  push (@args, ((defined ($argument->{Type}) )? $argument->{Type} . " " . $argument->{Name} : $argument->{Name}));
 	      }
 	      $method_string .= join (", ",@args) if (scalar @args);
@@ -753,9 +753,9 @@ sub export_vcg {
 	  next if ($method->{visibility} == 1 && $config{public});
 	  my $method_string = ($method->{visibility} == 0) ? '+ ' : '- ';
 	  $method_string .= $method->{name}."(";
-	  if (ref $method->{"Param"} ) {
+	  if (ref $method->{"Params"} ) {
 	    my @args = ();
-	    foreach my $argument ( @{$method->{"Param"}} ) {
+	    foreach my $argument ( @{$method->{"Params"}} ) {
 	      push (@args, $argument->{Type} . " " . $argument->{Name});
 	    }
 	    $method_string .= join (", ",@args);
@@ -882,8 +882,8 @@ sub export_xml
  	my ($methods) = ($Class->Operations);
 	foreach my $method (@$methods) {
 	  $method->{name}=xml_escape($method->{name});
-	  if (ref $method->{"Param"} ) {
-	    foreach my $argument ( @{$method->{"Param"}} ) {
+	  if (ref $method->{"Params"} ) {
+	    foreach my $argument ( @{$method->{"Params"}} ) {
 		$argument->{Type} = xml_escape($argument->{Type}) if (defined $argument->{Type});
 		$argument->{Name} = xml_escape($argument->{Name});
 		$argument->{Kind} = xml_escape($argument->{Kind}) if (defined $argument->{Kind});
@@ -1709,7 +1709,7 @@ sub get_umbrello_template {
     [% FOREACH op = class.Operations %]
     <UML:Operation isSpecification="false" isLeaf="false" xmi.id="[% op.Id %]" type="[% op.type | html  %]" isRoot="false" isAbstract="false" name="[% op.name | html  %]" >
      <UML:BehavioralFeature.parameter>
-      [% FOREACH par = op.Param %]
+      [% FOREACH par = op.Params %]
       <UML:Parameter isSpecification="false" isLeaf="false" visibility="private" xmi.id="[% par.Id %]" isRoot="false" value="[% par.value %]" type="[% par.type | html  %]" isAbstract="false" name="[% par.name | html %]" />
        [% END %]
      </UML:BehavioralFeature.parameter>
@@ -1734,7 +1734,7 @@ documentation="" name="[% at.name FILTER html %]" static="0" scope="200" />
       [% FOREACH op = class.Operations %]
       [% xmictr = xmictr + 1 %]
       <UML:Operation stereotype="" package="" xmi.id="[% xmictr %]" type="[% op.type %]" abstract="0" documentation="" name="[% op.name %]" static="0" scope="200" >
-         [% FOREACH par = op.Param %]
+         [% FOREACH par = op.Params %]
          [% xmictr = xmictr + 1 %]
          <UML:Parameter stereotype="" package="" xmi.id="[% xmictr %]" value="[% par.value %]" type="[% par.type  FILTER html %]" abstract="0" documentation="" name="[% par.Name FILTER html %]" static="0" scope="200" />
          [% END %]
@@ -1999,9 +1999,9 @@ sub get_default_template {
           <dia:attribute name="class_scope">
             <dia:boolean val="false"/>
           </dia:attribute>
-	  [% IF op.Param.0 %]
+	  [% IF op.Params.0 %]
           <dia:attribute name="parameters">
-            [% FOREACH par = op.Param %] 
+            [% FOREACH par = op.Params %] 
             <dia:composite type="umlparameter">
               <dia:attribute name="name">
                 <dia:string>#[% par.Name FILTER html %]#</dia:string>
