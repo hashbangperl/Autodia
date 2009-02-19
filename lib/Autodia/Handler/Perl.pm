@@ -212,7 +212,7 @@ sub _parse {
 
 	# if line contains dependancy name then parse for module name
 	if ($line =~ /^\s*(use|require)\s+($pkg_regexp)/) {
-	    warn "found a module being used/requireed : $2\n";
+#	    warn "found a module being used/requireed : $2\n";
 	    unless (ref $Class) {
 		# create new class with name
 		$Class = Autodia::Diagram::Class->new($filename);
@@ -250,7 +250,7 @@ sub _parse {
 
 	    if ($componentName =~ /Params::Validate/) {
 		$self->{_params_validate} = 1;
-		warn "found Params::Validate\n";
+#		warn "found Params::Validate\n";
 	    }
 
 	    # check package exists before doing stuff
@@ -479,25 +479,25 @@ sub _parse {
       # handle Params::Validate
       if ($last_sub && $self->{_params_validate} && ( $line =~ m/validate(_pos)?\s*\(/ or $self->{_in_params_validate_arguments} )) {
 	  my $found_end = 0;
-	  warn "found params::validate for sub $last_sub \n line : $line\n";
+#	  warn "found params::validate for sub $last_sub \n line : $line\n";
 	  $self->{_in_params_validate_arguments} = 1;
 	  $self->{_in_params_validate_positional_arguments} = 1 if $line =~ m/validate_pos/ ;
 	  if ($line =~ m|\)\s*;|) {
 	      $found_end = 1;
 	      $line =~ s/\)\s*;.*//;
-	      warn "found end \n";
+#	      warn "found end \n";
 	  } 
 	  $self->{_params_validate_arguments} .= $line;
 
 	  if ($found_end) { 
 	      my $validate_text = $self->{_params_validate_arguments};
-	      warn "found params::validate text : $validate_text\n";
+#	      warn "found params::validate text : $validate_text\n";
 
 	      # process with eval ala data::dumper
 	      $validate_text =~ s/.*validate\w*\s*\(\s*\@_\s*,//;
-	      warn "evaluating params::validate text : $validate_text\n";
+#	      warn "evaluating params::validate text : $validate_text\n";
 	      my $params = eval $validate_text;
-	      warn Dumper $params;
+#	      warn Dumper $params;
 	      my $parameters = [];
 	      push (@$parameters, { Name => "(HASHREF)" }) unless ( $self->{_in_params_validate_positional_arguments} );
 	      foreach my $param_name (keys %$params) {
