@@ -672,11 +672,10 @@ sub _parse {
 	$self->{Diagram}->add_relation($Relationship);
       }
 
-#      __PACKAGE__->load_components(qw/ PK::Auto Core +Slando::Data/);
       # if line is DBIx::Class component, then treat as superclass
-      if ($self->{_dbix_class} && $line =~ /\-\>load_components\s*\((.*)\)/) {
-	my $component_string = $1;
-	foreach my $component_name (grep (/^\+/ , ( eval $component_string ) )) {	    
+      if ($line =~ m/->load_components\s*\(\s*(?:q|qw|qq)?\s*([\'\"\(\{\/\#])\s*([^\'\"\)\}\/\#]*)\s*(\1|[\)\}])?/ ) {
+	my $component_string = $2;
+	foreach my $component_name (grep (/^\+/ , split(/[\s,]+/, $component_string ))) {
 	    $component_name =~ s/['"]//g;
 	    my $Superclass = Autodia::Diagram::Superclass->new($component_name);
 	    my $exists_already = $self->{Diagram}->add_superclass($Superclass);
@@ -688,7 +687,6 @@ sub _parse {
 	    $Class->add_inheritance($Inheritance);
 	    # add inheritance to diagram
 	    $self->{Diagram}->add_inheritance($Inheritance);
-	    
 	}
       }
 
