@@ -1,21 +1,15 @@
 ################################################################
-# AutoDIAL - Automatic Dia XML.   (C)Copyright 2001 A Trevena  #
+# Autodia - Automatic Dia XML.(C)Copyright 2001-2009 A Trevena #
 #                                                              #
-# AutoDIAL comes with ABSOLUTELY NO WARRANTY; see COPYING file #
+# AutoDia comes with ABSOLUTELY NO WARRANTY; see COPYING file  #
 # This is free software, and you are welcome to redistribute   #
 # it under certain conditions; see COPYING file for details    #
 ################################################################
 
 package Autodia::Diagram::Superclass;
-
 use strict;
 
-use vars qw($VERSION @ISA @EXPORT);
-require Exporter;
-
-use Autodia::Diagram::Object;
-
-@ISA = qw(Autodia::Diagram::Object);
+use base qw(Autodia::Diagram::Object);
 
 #---------------------------------------------------------------------
 
@@ -30,7 +24,6 @@ sub new
 
   bless ($DiagramSuperclass, ref($class) || $class);
   $DiagramSuperclass->_initialise($name);
-
   return $DiagramSuperclass;
 }
 
