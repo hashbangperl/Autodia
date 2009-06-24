@@ -101,6 +101,7 @@ sub _parse {
 
     # Class::Tangram bits
     $self->{_superclasses} = {};
+    $self->{_modules} = {};
     $self->{_is_tangram_class} = {};
     $self->{_in_tangram_class} = 0;
     $self->{_insideout_class} = 0;
@@ -246,10 +247,7 @@ sub _parse {
 	      next;
 	    }
 
-	    if ($componentName =~ /Params::Validate/) {
-		$self->{_params_validate} = 1;
-#		warn "found Params::Validate\n";
-	    }
+	    $self->{_modules}{$componentName} = 1;
 
 	    # check package exists before doing stuff
 	    $self->_is_package(\$Class, $filename);
@@ -352,6 +350,31 @@ sub _parse {
 		warn "ignoring empty \@ISA line $line_no \n";
 	    }
 	}
+
+      if ($self->{_modules}{Moose} && $line =~ m/extends (?:q|qw|qq)?\s*([\'\"\(\{\/\#])\s*([^\'\"\)\}\/\#]*)\s*(\1|[\)\}])?/ ) {
+	  my $superclass = $2;
+	  my @superclasses = split(/[\s*,]/, $superclass);
+
+	  foreach my $super (@superclasses) # WHILE_SUPERCLASSES
+	    {
+		my $Superclass = Autodia::Diagram::Superclass->new($super);
+		# add superclass to diagram
+		$self->{_superclasses}{$Class->Name}{$super} = 1;
+		my $exists_already = $Diagram->add_superclass($Superclass);
+		#	  warn "already exists ? $exists_already \n";
+		if (ref $exists_already) {
+		    $Superclass = $exists_already;
+		}
+		# create new inheritance
+		my $Inheritance = Autodia::Diagram::Inheritance->new($Class, $Superclass);
+		# add inheritance to superclass
+		$Superclass->add_inheritance($Inheritance);
+		# add inheritance to class
+		$Class->add_inheritance($Inheritance);
+		# add inheritance to diagram
+		$Diagram->add_inheritance($Inheritance);
+	    }
+      }
 
 	# Handle Class::Tangram classes
 	if (ref $self) {
@@ -539,7 +562,7 @@ sub _parse {
 
 
       # handle Params::Validate
-      if ($last_sub && $self->{_params_validate} && ( $line =~ m/validate(_pos)?\s*\(/ or $self->{_in_params_validate_arguments} )) {
+      if ($last_sub && $self->{_modules}{'Params::Validate'} && ( $line =~ m/validate(_pos)?\s*\(/ or $self->{_in_params_validate_arguments} )) {
 	  my $found_end = 0;
 #	  warn "found params::validate for sub $last_sub \n line : $line\n";
 	  $self->{_in_params_validate_arguments} = 1;
@@ -621,8 +644,19 @@ sub _parse {
 	$self->{_dbix_class_columns} = "{ $field_data ";
       }
 
+
+      # add Moose attributes
+      if ($self->{_modules}{Moose} && $line =~ /^\s*has\s+'?(\w+)'?/) {
+	  my $attr_name = $1;
+	  $Class->add_attribute({
+				 name => $attr_name,
+				 visibility => 0,
+				 Id => $Diagram->_object_count,
+				});
+      }
+
       # if line is DBIx::Class relationship then parse out
-      if ($line =~ /\-\>has_(many|one|)\s*\((.*)/ or $line =~ /\-\>(belongs_to|)\s*\((.*)/) {
+      if ($line =~ /\-\>has_(many|one)\s*\((.*)/ or $line =~ /\-\>(belongs_to)\s*\((.*)/) {
 	my ($rel_type, $rel_data) = ($1,$2);
 	$rel_data =~ s/#.*$//;
 	my ($rel_name,$related_classname) = split(/\s*(?:\=\>|,)\s*/,$rel_data);
