@@ -142,7 +142,7 @@ sub _parse {
 	}
 
         my $continue_base = $continue->{base};
-	if ($line =~ /^\s*use\s+base\s+(?:q|qw|qq)?\s*([\'\"\(\{\/\#])\s*([^\'\"\)\}\/\#]*)\s*(\1|[\)\}])?/ or ($continue_base && $line =~ /$continue_base/)) {
+	if ($line =~ /^\s*use\s+(?:base|parent)\s+(?:q|qw|qq)?\s*([\'\"\(\{\/\#])\s*([^\'\"\)\}\/\#]*)\s*(\1|[\)\}])?/ or ($continue_base && $line =~ /$continue_base/)) {
 
 	    my $superclass = $2;
 	    my $end = $3 || '';
@@ -423,7 +423,7 @@ sub _parse {
 
 	}
 
-	# handle Class::DBI/Ima::DBI/Class::Accessor
+	# handle Class::DBI/Ima::DBI
 	if ($line =~ /->columns\(\s*All\s*=>\s*(.*)$/) {
 	  my $columns = $1;
 	  my @cols;
@@ -473,6 +473,7 @@ sub _parse {
 	# handle Class::Accessor
 	if ($line =~ /->mk_accessors\s*\(\s*(.*)$/) {
 	  my $attributes = $1;
+	  warn "[DEBUG] found accessors on line : $line\n";
 	  my @attributes;
 	  if ($attributes =~ s/^qw(.)//) {
 	    $attributes =~ s/\s*[\)\]\}\/\#\|]\s*\)\s*;\s*(#.*)?$//;
@@ -486,14 +487,19 @@ sub _parse {
 
 	  foreach my $attribute ( @attributes ) {
 	    # add attribute
+	      warn "[DEBUG] got attribute : $attribute\n";
+	      next unless ($attribute =~ m/\w+/);
+	      warn "[DEBUG] keeping attribute : $attribute\n";
 	    my $visibility = ( $attribute =~ m/^\_/ ) ? 1 : 0;
 	    $Class->add_attribute({
 				   name => $attribute,
 				   visibility => $visibility,
 				   Id => $Diagram->_object_count,
 				  });
-	    # add accessor
-	    $Class->add_operation({ name => $attribute, visibility => $visibility, Id => $Diagram->_object_count() } );
+	      # add accessor if not already present
+	      unless ($Class->get_operation($attribute)) {
+		  $Class->add_operation({ name => $attribute, visibility => $visibility, Id => $Diagram->_object_count() } );
+	      }
 	  }
 
 	  $continue->{class_accessor_attributes} = 1 unless $line =~ s/(.*)\)\s*;(#.*)?\s*$/$1/;
@@ -511,7 +517,11 @@ sub _parse {
 	  } else {
 	      @attributes = split(/\s+/,$line);
 	  }
+	  warn "[DEBUG] found MORE accessors on line : $line\n";
 	  foreach my $attribute ( @attributes ) {
+	      warn "[DEBUG] got attribute : $attribute\n";
+	      next unless ($attribute =~ m/\w+/);
+	      warn "[DEBUG] keeping attribute : $attribute\n";
 	      # add attribute
 	      my $visibility = ( $attribute =~ m/^\_/ ) ? 1 : 0;
 	      $Class->add_attribute({
@@ -519,8 +529,11 @@ sub _parse {
 				     visibility => $visibility,
 				     Id => $Diagram->_object_count,
 				    });
-	      # add accessor
-	      $Class->add_operation({ name => $attribute, visibility => $visibility, Id => $Diagram->_object_count() } );
+
+	      # add accessor if not already present
+	      unless ($Class->get_operation($attribute)) {
+		  $Class->add_operation({ name => $attribute, visibility => $visibility, Id => $Diagram->_object_count() } );
+	      }
 	  }
       }
 
@@ -686,7 +699,10 @@ sub _parse {
 	    # if we wanted to be clever we could count the parameters
 	    # see Autodia::Handler::PHP for an example of parameter handling
 
-	    $Class->add_operation(\%subroutine);
+	    unless ($Class->get_operation($subname)) {
+		$Class->add_operation(\%subroutine);
+	    }
+
 	}
 
 	# if line contains object attributes parse add to class
