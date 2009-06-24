@@ -79,8 +79,7 @@ sub _parse
 	$infunc = 0 if ($infuncparen < 1);
 
 #	print "$inclassparen : $inclass $infuncparen : $infunc \n";
-
-	if ($line =~ /^\s*class\s+([^\s\(\)\{\}]+)/) {
+	if ($line =~ /.*class\s+([^\s\(\)\{\}]+)/) {
 	  my $className = $1;
 	  $inclass = 1;
 	  $inclassparen = $up - $down;
@@ -210,25 +209,25 @@ sub _parse
 
 	}
 
+
 	# if line contains sub then parse for method data
-	if ($line =~ /^\s*function\s+&?([^\s\(\)]+)/) {
+	if ($line =~ /([^\s].*)*function\s+&?([^\s\(\)]+)/) {
 	  unless ($inclass) {
-	    my @newclass = reverse split (/\//, $filename);
+	      my @newclass = reverse split (/\//, $filename);
 	      $Class = Autodia::Diagram::Class->new($newclass[0]);
 	      # add to diagram
 	      $Diagram->add_class($Class);
 	      $inclass = 1;
 	      $inclassparen = $up - $down;
-	    }
-	  my $subname = $4;
+	  }
+	  my $subname = $2;
 	  my $method_modifier = $1;
 
 	  $infunc = 1;
 	  $infuncparen = $up - $down;
 	  #	      print "Function found: $subname\n$line\n";
 	  my %subroutine = ( "name" => $subname, );
-	  $subroutine{"visibility"} = ($method_modifier =~ m/private/) ? 1 : ($method_modifier =~ m/protected/) ? 2 : ($subroutine{"name"}
-=~ m/^\_/) ? 1 : 0;
+	  $subroutine{"visibility"} = ($method_modifier =~ m/private/) ? 1 : ($method_modifier =~ m/protected/) ? 2 : ($subroutine{"name"} =~ m/^\_/) ? 1 : 0;
 	  $subroutine{"inheritance_type"} = ($method_modifier =~ m/abstract/) ? 0 : ($method_modifier =~ m/final/) ? 2 : 1;
 
 	      # check for explicit parameters
@@ -244,14 +243,14 @@ sub _parse
 		  foreach my $par (@parameters1) {
 		    my ($name, $val) = split (/=/, $par);
 		    $val =~ s/["']//g if (defined $val);
-
-                   my $kind;
-                   if($name =~ m/&/) {
-                       $name =~ s/&//g;
-                       $kind = 3;
-                   } else {
-                       $kind = 1;
-                   }
+		    $name =~ s/^\s+|\s+$//g;
+		    my $kind;
+		    if($name =~ m/&/) {
+			$name =~ s/&//g;
+			$kind = 3;
+		    } else {
+			$kind = 1;
+		    }
 
 		    my %temphash = (
 				    Name => $name,
