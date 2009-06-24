@@ -5,6 +5,7 @@ version 2.09
 - added template and backslash support to C++ handler (patch provided by Patrick Wiggins)
 - added support for Params::Validate in Perl Handler
 - added methods to allow get/set operations in class objects after adding them
+- added better support for PHP5 classes (patch provided by Jurrien / Norm )
 
 version 2.08 01/07/2008
 - fixed skiplist - moved to handlers from diagram
