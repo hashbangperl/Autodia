@@ -28,6 +28,7 @@ use Autodia::Diagram::Superclass;
 use Autodia::Diagram::Dependancy;
 use Autodia::Diagram::Inheritance;
 use Autodia::Diagram::Relation;
+use Autodia::Diagram::Realization;
 
 my %dot_filetypes = (
 		     gif => 'as_gif',
@@ -132,6 +133,16 @@ sub add_dependancy
 
     return 1;
 }
+
+sub add_realization {
+   my $self        = shift;
+   my $realization = shift;
+
+   $self->_package_add($realization);
+   $realization->Set_Id( $self->_object_count );
+
+   return 1;
+ }
 
 sub add_inheritance {
     my $self = shift;
@@ -417,6 +428,26 @@ sub Relations {
     return \@relations;
   }
 
+sub Realizations {
+   my $self = shift;
+
+   unless( defined $self->{"packages"}{"realization"} ) {
+     print STDERR "Realizations Diagram.pm : none to be printed - ignoring..\n
+";
+     return 0;
+   }
+
+   my @realizations;
+   my %realizations = %{ $self->{"packages"}{"realization"} };
+   my @keys         = keys %realizations;
+   my $i            = 0;
+
+   foreach my $key (@keys) {
+     $realizations[ $i++ ] = $realizations{$key};
+   }
+
+   return \@realizations;
+ }
 
 sub Dependancies
   {
@@ -1139,6 +1170,16 @@ sub _layout_dia_new {
     }
   }
 
+   # add realization edges
+   my $realizations = $self->Realizations;
+   if( ref $realizations ) {
+     foreach my $Realization (@$realizations) {
+       push( @edges,
+         { to => $Realization->Child, from => $Realization->Parent } );
+     }
+   }
+
+
   # add relation edges
   my $relations = $self->Relations;
   if (ref $relations) {
@@ -1298,6 +1339,9 @@ sub _layout_dia_new {
 
   if (ref $self->Dependancies)
     { push(@relationships, @{$self->Dependancies}); }
+
+  if( ref $self->Realizations ) {
+   push( @relationships, @{ $self->Realizations } );}
 
   if (ref $self->Inheritances)
     { push(@relationships, @{$self->Inheritances}); }
@@ -1632,6 +1676,9 @@ my @relationships = ();
 
     if (ref $self->Dependancies)
       {	push(@relationships, @{$self->Dependancies}); }
+
+    if( ref $self->Realizations ) {
+     push( @relationships, @{ $self->Realizations } );}
 
     if (ref $self->Inheritances)
       { push(@relationships, @{$self->Inheritances}); }
@@ -2084,6 +2131,44 @@ sub get_default_template {
        </dia:attribute>
      </dia:composite>
    </dia:attribute>
+ </dia:object>
+[% END %]
+[% # %]
+[% SET realizations = diagram.Realizations %]
+[% # %]
+[% FOREACH realization = realizations %]
+ <dia:object type="UML - Realizes" version="0" id="O[% realization.Id %]">
+   <dia:attribute name="obj_pos">
+     <dia:point val="[% realization.Orth_Top_Right %]"/>
+   </dia:attribute>
+   <dia:attribute name="obj_bb">
+     <dia:rectangle val="[% realization.Orth_Top_Right %];[% realization.Orth
+_Bottom_Left %]"/>
+   </dia:attribute>
+   <dia:attribute name="orth_points">
+     <dia:point val="[% realization.Orth_Bottom_Left%]"/>
+     <dia:point val="[% realization.Orth_Mid_Left %]"/>
+     <dia:point val="[% realization.Orth_Mid_Right %]"/>
+     <dia:point val="[% realization.Orth_Top_Right%]"/>
+   </dia:attribute>
+   <dia:attribute name="orth_orient">
+     <dia:enum val="1"/>
+     <dia:enum val="0"/>
+     <dia:enum val="1"/>
+   </dia:attribute>
+   <dia:attribute name="draw_arrow">
+     <dia:boolean val="true"/>
+   </dia:attribute>
+   <dia:attribute name="name">
+     <dia:string/>
+   </dia:attribute>
+   <dia:attribute name="stereotype">
+     <dia:string/>
+   </dia:attribute>
+   <dia:connections>
+     <dia:connection handle="1" to="O[% realization.Child %]" connection="6"/>
+     <dia:connection handle="0" to="O[% realization.Parent %]" connection="1"/>
+   </dia:connections>
  </dia:object>
 [% END %]
 [% # %]
