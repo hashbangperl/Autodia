@@ -6,6 +6,9 @@ version 2.09
 - added support for Params::Validate in Perl Handler
 - added methods to allow get/set operations in class objects after adding them
 - added better support for PHP5 classes (patch provided by Jurrien / Norm )
+- added Realization relation (patches provided by David Bike)
+- added support for Class::Accessor and Class::Data::Inheritable in Perl handler
+- added Moose support, fixed handling of subrefs in Perl Handler
 
 version 2.08 01/07/2008
 - fixed skiplist - moved to handlers from diagram
