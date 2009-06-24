@@ -676,7 +676,7 @@ sub _parse {
       if ($line =~ m/->load_components\s*\(\s*(?:q|qw|qq)?\s*([\'\"\(\{\/\#])\s*([^\'\"\)\}\/\#]*)\s*(\1|[\)\}])?/ ) {
 	my $component_string = $2;
 	foreach my $component_name (grep (/^\+/ , split(/[\s,]+/, $component_string ))) {
-	    $component_name =~ s/['"]//g;
+	    $component_name =~ s/['"+]//g;
 	    my $Superclass = Autodia::Diagram::Superclass->new($component_name);
 	    my $exists_already = $self->{Diagram}->add_superclass($Superclass);
 	    $Superclass = $exists_already if (ref $exists_already);
