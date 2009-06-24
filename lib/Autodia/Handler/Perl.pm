@@ -184,6 +184,9 @@ sub _parse {
 		    my $Superclass = Autodia::Diagram::Superclass->new($super);
 		    # add superclass to diagram
 		    $self->{_superclasses}{$Class->Name}{$super} = 1;
+		    if ($super =~ m/Class..Accessor\:\:/) {
+			$self->{_superclasses}{$Class->Name}{'Class::Accessor'} = 1;
+		    }
 
 		    $self->{_is_tangram_class}{$Class->Name} = {state=>0} if ($super eq 'Class::Tangram');
 
@@ -496,7 +499,6 @@ sub _parse {
 	# handle Class::Accessor
 	if ($line =~ /->mk_accessors\s*\(\s*(.*)$/) {
 	  my $attributes = $1;
-	  warn "[DEBUG] found accessors on line : $line\n";
 	  my @attributes;
 	  if ($attributes =~ s/^qw(.)//) {
 	    $attributes =~ s/\s*[\)\]\}\/\#\|]\s*\)\s*;\s*(#.*)?$//;
@@ -510,9 +512,7 @@ sub _parse {
 
 	  foreach my $attribute ( @attributes ) {
 	    # add attribute
-	      warn "[DEBUG] got attribute : $attribute\n";
 	      next unless ($attribute =~ m/\w+/);
-	      warn "[DEBUG] keeping attribute : $attribute\n";
 	    my $visibility = ( $attribute =~ m/^\_/ ) ? 1 : 0;
 	    $Class->add_attribute({
 				   name => $attribute,
@@ -540,11 +540,8 @@ sub _parse {
 	  } else {
 	      @attributes = split(/\s+/,$line);
 	  }
-	  warn "[DEBUG] found MORE accessors on line : $line\n";
 	  foreach my $attribute ( @attributes ) {
-	      warn "[DEBUG] got attribute : $attribute\n";
 	      next unless ($attribute =~ m/\w+/);
-	      warn "[DEBUG] keeping attribute : $attribute\n";
 	      # add attribute
 	      my $visibility = ( $attribute =~ m/^\_/ ) ? 1 : 0;
 	      $Class->add_attribute({
