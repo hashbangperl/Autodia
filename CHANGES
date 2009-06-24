@@ -1,7 +1,7 @@
 Changes to AutoDia
 ------------------
 
-version 2.09
+version 2.09 24/06/2009
 - added template and backslash support to C++ handler (patch provided by Patrick Wiggins)
 - added support for Params::Validate in Perl Handler
 - added methods to allow get/set operations in class objects after adding them
