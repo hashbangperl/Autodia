@@ -52,9 +52,10 @@ sub _parse_file { # parses dbi-connection string
   my $escape_tablenames = 0;
   my $unescape_tablenames=0;
   my $database_type =  $dbh->get_info( 17 );
+  warn "database_type : $database_type\n";
   my ($scheme, $driver, $attr_string, $attr_hash, $driver_dsn) = DBI->parse_dsn("DBI:$filename") or die "Can't parse DBI DSN '$filename'";
   my $dbname;
-  if ($driver_dsn =~ m/db=([^\:]+)/) {
+  if ($driver_dsn =~ m/(?:db|dbname)=([^\:]+)/) {
     $dbname = $1;
   } else {
     ( $dbname = $driver_dsn) =~ s/([^\:]+)/$1/;
@@ -71,6 +72,7 @@ sub _parse_file { # parses dbi-connection string
   $unescape_tablenames = 1 if (lc($database_type) =~ m/(mysql)/);
 
   # pre-process tables
+
   foreach my $table ($dbh->tables(undef, $schema, '%', '')) {
       $table =~ s/['`"]//g;
       $table =~ s/.*\.(.*)$/$1/;
@@ -92,29 +94,71 @@ sub _parse_file { # parses dbi-connection string
 
     # get fields
     my $esc_table = $table;
-    $esc_table = qq{"$esc_table"} if ($escape_tablenames);
+    $esc_table = qq{"${dbname}.$esc_table"} if ($escape_tablenames);
 
-    my $primary_key = { name=>'Key', type=>'Primary', Param=>[], visibility=>0, };
-    my $sth = $dbh->primary_key_info( $schema || undef, $dbname,  $table ) or die $dbh->errstr;
-    my @key_columns = keys %{$sth->fetchall_hashref('COLUMN_NAME')};
-    if (@key_columns) {
-      push (@{$primary_key->{Param}}, map ({ Name=>$_, Type=>''}, @key_columns));
-      $Class->add_operation($primary_key);
+    warn "using dbname $dbname / table $esc_table\n";
+
+    my @key_columns;
+    my $primary_key = { name=>'Key', type=>'Primary', Params=>[], visibility=>0, };
+    my $sth = $dbh->primary_key_info( $schema || undef, $dbname,  $esc_table );
+    if (defined $sth) {
+	@key_columns = keys %{$sth->fetchall_hashref('COLUMN_NAME')};
+    } else {
+	warn "trying dbh -> primary key method using schema $schema, dbname : $dbname, table $esc_table\n";
+	# from DBIx::Class::Schema::Loader::DBI / Rose::DBI
+	@key_columns = map { lc } $dbh->primary_key($schema || undef, $dbname, $esc_table);
+
     }
+    warn "got key columns for table $esc_table : @key_columns\n";
+
+    if (@key_columns) {
+	push (@{$primary_key->{Params}}, map ({ Name=>$_, Type=>''}, @key_columns));
+	$Class->add_operation($primary_key);
+    }
+
+    # FIXME : need to subclass db's that don't work
+    # try using DBD, then use subclass to do horrid hacks
+
+    my $guess_foreign_keys = 1;
+
+    # get foreign keys
+    $sth = $dbh->foreign_key_info( $schema || undef, $dbname, '', $schema || undef, $dbname, $esc_table );
+    if ($sth) {
+	my %rels;
+
+	my $i = 1; # for unnamed rels, which hopefully have only 1 column ...
+	while(my $raw_rel = $sth->fetchrow_arrayref) {
+	    $guess_foreign_keys = 0 if ($guess_foreign_keys);
+	    warn "got relation $raw_rel\n";
+	    my $pk_tbl  = $raw_rel->[2];
+	    my $pk_col  = lc $raw_rel->[3];
+	    my $fk_col  = lc $raw_rel->[7];
+	    my $relid   = ($raw_rel->[11] || ( "__dcsld__" . $i++ ));
+	    $rels{$relid}->{tbl} = $pk_tbl;
+	    $rels{$relid}->{cols}->{$pk_col} = $fk_col;
+
+	    push(@{$self->{foreign_tables}{$pk_tbl}}, {field => $pk_col, table => $esc_table, class => $Class });
+	    $Class->add_operation( { name=>'Key', type=>'Foreign', Params=>[ { Name => $pk_col }], visibility=>0, } );
+	}
+	$sth->finish;
+    }
+
+
     for my $field (@{$self->{tables}{$table}{fields}}) {
-      my $sth = $dbh->column_info( $schema || undef, $dbname,  $table, $field );
+      my $sth = $dbh->column_info( $schema || undef, $dbname,  $esc_table, $field );
       my $field_info = $sth->fetchrow_hashref;
-#      warn Dumper(type => $field_info);
       $Class->add_attribute({
 			     name => $field,
 			     visibility => 0,
 			     type => $field_info->{TYPE_NAME},
 			    });
 
-      if (my $dep = $self->_is_foreign_key($table, $field)) {
-	# fix - need to handle multiple relations per table
-	push(@{$self->{foreign_tables}{$dep}}, {field => $field, table => $table, class => $Class });
-	$Class->add_operation( { name=>'Key', type=>'Foreign', Param=>[ { Name => $field, Type => $field_info->{TYPE_NAME}, }], visibility=>0, } );
+      if ($guess_foreign_keys) {
+	  if (my $dep = $self->_guess_foreign_key($table, $field)) {
+	      # fix - need to handle multiple relations per table
+	      push(@{$self->{foreign_tables}{$dep}}, {field => $field, table => $esc_table, class => $Class });
+	      $Class->add_operation( { name=>'Key', type=>'Foreign', Params=>[ { Name => $field, Type => $field_info->{TYPE_NAME}, }], visibility=>0, } );
+	  }
       }
     }
   }
@@ -152,7 +196,7 @@ sub _add_foreign_keytable {
   return;
 }
 
-sub _is_foreign_key {
+sub _guess_foreign_key {
   my ($self, $table, $field) = @_;
   my $is_fk = undef;
   $field =~ s/'"`//g;
