@@ -1,6 +1,10 @@
 Changes to AutoDia
 ------------------
 
+version 2.10
+- fixed handling of DBIC components
+- fix to C++ handler from Renato Golin (www.systemcall.org)
+
 version 2.09 24/06/2009
 - added template and backslash support to C++ handler (patch provided by Patrick Wiggins)
 - added support for Params::Validate in Perl Handler
