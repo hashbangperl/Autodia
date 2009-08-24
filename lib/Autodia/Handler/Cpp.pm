@@ -87,25 +87,27 @@ sub _parse
 	      $Diagram->add_class($Class);
 
 	      # handle superclass(es)
-	      if ($line =~ m/^\s*class\s+\w+\s*\:\s*(.+)\s*/)
+	      if ($line =~ m/^\s*class\s+\w+\s*\:\s*([^{]+)\s*/)
 		{
 		  my $superclasses = $1;
+		  $superclasses =~ s/public\s*//i;
 		  warn "found superclasses : $superclasses\n";
 		  my @superclasses = split (/\s*,\s*/, $superclasses);
-		  foreach my $super (@superclasses)
-		    {
-		      warn "superclass : $super\n";
+		  foreach my $super (@superclasses) {
+		      $super =~ s/\s*//ig;
+#		      warn "superclass : $super\n";
 		      $super =~ s/^\s*(\w+\s+)?([A-Za-z0-9\_]+)\s*$/$2/;
-		      warn "superclass : $super\n";
+#		      warn "superclass : $super\n";
 		      my $Superclass = Autodia::Diagram::Superclass->new($super);
 		      my $exists_already = $Diagram->add_superclass($Superclass);
-		      if (ref $exists_already)
-			{ $Superclass = $exists_already; }
+		      if (ref $exists_already) {
+			  $Superclass = $exists_already;
+		      }
 		      my $Inheritance = Autodia::Diagram::Inheritance->new($Class, $Superclass);
 		      $Superclass->add_inheritance($Inheritance);
 		      $Class->add_inheritance($Inheritance);
 		      $Diagram->add_inheritance($Inheritance);
-		    }
+		  }
 		}
 	      last LINE;
 	    }
