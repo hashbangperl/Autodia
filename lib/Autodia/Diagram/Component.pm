@@ -1,20 +1,17 @@
 ################################################################
-# AutoDIAL - Automatic Dia XML.   (C)Copyright 2001 A Trevena  #
+# Autodia - Automatic Dia XML.(C)Copyright 2001-2009 A Trevena #
 #                                                              #
-# AutoDIAL comes with ABSOLUTELY NO WARRANTY; see COPYING file #
+# Autodia comes with ABSOLUTELY NO WARRANTY; see COPYING file  #
 # This is free software, and you are welcome to redistribute   #
 # it under certain conditions; see COPYING file for details    #
 ################################################################
 package Autodia::Diagram::Component;
-
 use strict;
 
-use vars qw($VERSION @ISA @EXPORT);
-use Exporter;
+use Carp qw(cluck);
 
-use Autodia::Diagram::Object;
+use base qw(Autodia::Diagram::Object);
 
-@ISA = qw(Autodia::Diagram::Object);
 
 #-------------------------------------------------------------------------------
 
@@ -25,6 +22,7 @@ sub new
 {
   my $class = shift;
   my $name = shift;
+  cluck "new method called with no name\n" unless ($name);
   my $DiagramComponent = {};
   bless ($DiagramComponent, ref($class) || $class);
   $DiagramComponent->_initialise($name);
