@@ -9,6 +9,8 @@
 package Autodia::Diagram::Superclass;
 use strict;
 
+use Carp qw(cluck);
+
 use base qw(Autodia::Diagram::Object);
 
 #---------------------------------------------------------------------
@@ -20,6 +22,9 @@ sub new
 {
   my $class = shift;
   my $name = shift;
+
+  cluck "new method called with no name\n" unless ($name);
+
   my $DiagramSuperclass = {};
 
   bless ($DiagramSuperclass, ref($class) || $class);
