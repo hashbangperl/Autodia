@@ -1,6 +1,8 @@
 Changes to AutoDia
 ------------------
 
+version 2.11
+
 version 2.10  25/08/2009
 - fixed handling of DBIC components
 - fix to C++ handler from Renato Golin (www.systemcall.org)
