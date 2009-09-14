@@ -63,7 +63,7 @@ my $xxx = [% class.Name %]->[% op.name %]( .. );
 =head2 [% op.name %]
 
 
-my $xxx = [% class.Name %]->[% op.name %] ( [% FOREACH par = op.Param %] [% par.Name %] => xxx [% IF loop.last %] ) [% ELSE %], [% END %] [% END %];
+my $xxx = [% class.Name %]->[% op.name %] ( [% FOREACH par = op.Param %] [% par.Name %] => xxx [% IF loop.last %] [% ELSE %], [% END %] [% END %] );
 
 takes arguments :  [% FOREACH par = op.Param %] [% par.Name %] [% IF loop.last %] [% ELSE %], [% END %] [% END %]
 
