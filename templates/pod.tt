@@ -2,6 +2,7 @@
 [% FOREACH class = classes %]
 
 [% SET filename = class.Name _ ".pod" %]
+[% filename.replace('\W+', '_') %] 
 [% USE String %]
 [% SET filename = String.new(class.Name).replace('::', '_') _ '.pod' %]
 creating pod for [% class.Name %] : [% filename %]
@@ -76,6 +77,10 @@ returns :
 =cut
 
 ### CODE GOES HERE ###
+
+=head1 NOTES
+
+Created using Autodia (http://www.aarontrevena.co.uk/opensource/autodia/index.html) : autodia.pl -l perl -r -d path/to/files -t /path/to/pod.tt -F -O
 
 =head1 SEE ALSO
 
