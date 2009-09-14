@@ -2,7 +2,7 @@
 [% FOREACH class = classes %]
 
 [% SET filename = class.Name _ ".pod" %]
-[% filename.replace('\W+', '_') %] 
+[% filename.replace('[\W+\:]', '_') %] 
 [% USE String %]
 [% SET filename = String.new(class.Name).replace('::', '_') _ '.pod' %]
 creating pod for [% class.Name %] : [% filename %]
