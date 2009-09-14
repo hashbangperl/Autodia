@@ -1,8 +1,7 @@
 [% classes = diagram.Classes %]
 [% FOREACH class = classes %]
 
-[% SET filename = class.Name _ ".pod" %]
-[% filename.replace('[\W+\:]', '_') %] 
+[% SET filename = class.Name.split('::').join('_') _ ".pod" %]
 [% USE String %]
 [% SET filename = String.new(class.Name).replace('::', '_') _ '.pod' %]
 creating pod for [% class.Name %] : [% filename %]
