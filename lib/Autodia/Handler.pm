@@ -26,7 +26,6 @@ sub new
   my $class  = shift();
   my $self   = {};
   my $config = shift;
-  #my %config = %{shift()};
 
   bless ($self, ref($class) || $class);
   $self->_initialise($config);
@@ -37,17 +36,26 @@ sub new
 #------------------------------------------------------------------------
 # Access Methods
 
+=head2 process
+
+parse file(s), takes hashref of configuration, returns no of files processed
+
+=cut 
+
 sub process {
   my $self = shift;
   my %config = %{$self->{Config}};
+  my $processed_files = 0;
   foreach my $filename (@{$config{filenames}}) {
     my $current_file = $config{inputpath} . $filename;
     print "opening $current_file\n" unless ( $config{silent} );
     $self->_reset() if ($config{singlefile});
     $self->_parse_file($current_file)
-      or warn "no such file - $current_file \n";
+      or warn "no such file / database - $current_file \n";
     $self->output($current_file) if ($config{singlefile});
+    $processed_files++;
   }
+  return $processed_files;
 }
 
 sub skip {
