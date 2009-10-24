@@ -2142,8 +2142,7 @@ sub get_default_template {
      <dia:point val="[% realization.Orth_Top_Right %]"/>
    </dia:attribute>
    <dia:attribute name="obj_bb">
-     <dia:rectangle val="[% realization.Orth_Top_Right %];[% realization.Orth
-_Bottom_Left %]"/>
+     <dia:rectangle val="[% realization.Orth_Top_Right %];[% realization.Orth_Bottom_Left %]"/>
    </dia:attribute>
    <dia:attribute name="orth_points">
      <dia:point val="[% realization.Orth_Bottom_Left%]"/>
