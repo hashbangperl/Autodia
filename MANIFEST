@@ -22,10 +22,12 @@ lib/Autodia/Diagram/Realization.pm
 lib/Autodia/Diagram/Object.pm
 lib/Autodia/Diagram/Superclass.pm
 lib/Autodia/Handler.pm
+lib/Autodia/Handler/ASP.pm
 lib/Autodia/Handler/Cpp.pm
 lib/Autodia/Handler/Perl.pm
 lib/Autodia/Handler/PHP.pm
 lib/Autodia/Handler/DBI.pm
+lib/Autodia/Handler/DBI_SQLT.pm
 lib/Autodia/Handler/SQL.pm
 lib/Autodia/Handler/dia.pm
 lib/Autodia/Handler/Torque.pm
