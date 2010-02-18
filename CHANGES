@@ -6,7 +6,8 @@ version 2.11
 - process method in Handler superclass now returns no of files processed
 - experimental (non working) SQL-Translator handler
 - bug fix for PHP handler (reported by Elijah Insua)
-- new ASP Handler Dalton Mackie (Gnavicks)()
+- new ASP Handler Dalton Mackie (Gnavicks)
+- fix to duplicate class definitions/mentions in many handlers
 
 version 2.10  25/08/2009
 - fixed handling of DBIC components
