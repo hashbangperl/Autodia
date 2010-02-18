@@ -87,7 +87,8 @@ sub _parse
 	  last if ($self->skip($className));
 	  $Class = Autodia::Diagram::Class->new($className);
 	  # add to diagram
-	  $Diagram->add_class($Class);
+	  my $exists = $Diagram->add_class($Class);
+	  $Class = $exists if ($exists);
 	  if ($line =~ /.*extends\s+(\S+)/) {
 	    my $superclass = $1;
 	    $self->_is_package(\$Class, $filename);
@@ -211,12 +212,13 @@ sub _parse
 
 
 	# if line contains sub then parse for method data
-	if ($line =~ /([^\s].*)*function\s+&?([^\s\(\)]+)/) {
+	if ($line =~ /([^\s]*)\s*function\s+&?(\w+)/) {
 	  unless ($inclass) {
 	      my @newclass = reverse split (/\//, $filename);
 	      $Class = Autodia::Diagram::Class->new($newclass[0]);
 	      # add to diagram
-	      $Diagram->add_class($Class);
+	      my $exists = $Diagram->add_class($Class);
+	      $Class = $exists if ($exists);
 	      $inclass = 1;
 	      $inclassparen = $up - $down;
 	  }
@@ -225,7 +227,7 @@ sub _parse
 
 	  $infunc = 1;
 	  $infuncparen = $up - $down;
-	  #	      print "Function found: $subname\n$line\n";
+	  print "Function found: $subname\n$line\n";
 	  my %subroutine = ( "name" => $subname, );
 	  $subroutine{"visibility"} = ($method_modifier =~ m/private/) ? 1 : ($method_modifier =~ m/protected/) ? 2 : ($subroutine{"name"} =~ m/^\_/) ? 1 : 0;
 	  $subroutine{"inheritance_type"} = ($method_modifier =~ m/abstract/) ? 0 : ($method_modifier =~ m/final/) ? 2 : 1;
