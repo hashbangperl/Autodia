@@ -101,11 +101,13 @@ sub getHandlers
 		    "cpp"	=> 'Autodia::Handler::Cpp',
 		    "php"	=> 'Autodia::Handler::PHP',
 		    "dbi"       => 'Autodia::Handler::DBI',
+		    "dbi_sqlt"  => 'Autodia::Handler::DBI_SQLT',
 		    "dia"       => 'Autodia::Handler::dia',
 		    "sql"       => 'Autodia::Handler::SQL',
 		    "torque"    => 'Autodia::Handler::Torque',
 		    "python"    => 'Autodia::Handler::python',
 		    "umbrello"  => 'Autodia::Handler::umbrello',
+		    "asp"       => 'Autodia::Handler::ASP',
 		   );
     print "getting handlers..\n" unless ( $config{silent} );
     return \%handlers;
@@ -162,6 +164,11 @@ sub getPattern
 		   wildcards =>  ['xmi'],
 		);
 
+  my %asp   = ( regex => '\w+.asp',
+                   wildcards =>  ['asp'],
+                );
+
+
   my %patterns = (
 		  "perl" => \%perl,
 		  'c++'  => \%cpp,
@@ -174,6 +181,7 @@ sub getPattern
 		  "torque" => {},
 		  "python" => \%python,
 		  "umbrello" => \%umbrello,
+                  "asp" => \%asp,
 		 );
 
   return \%{$patterns{$language}};
