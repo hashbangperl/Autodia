@@ -84,7 +84,8 @@ sub _parse
 	      $classname =~ s/[\{\}]//g;
 	      last if ($self->skip($classname));
 	      $Class = Autodia::Diagram::Class->new($classname);
-	      $Diagram->add_class($Class);
+	      my $exists = $Diagram->add_class($Class);
+	      $Class = $exists if ($exists);
 
 	      # handle superclass(es)
 	      if ($line =~ m/^\s*class\s+\w+\s*\:\s*([^{]+)\s*/)
