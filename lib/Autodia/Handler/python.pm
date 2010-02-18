@@ -55,8 +55,8 @@ sub _parse {		# parses python source code
   my $exit_depth = -1;
 
   my $Module = Autodia::Diagram::Class->new($module_name);
-  $Diagram->add_class($Module);
-  my $Class = $Module;
+  my $exists = $Diagram->add_class($Module);
+  $Class = $Module = $exists if ($exists);
 
   my %aliases = ();
 
@@ -95,7 +95,8 @@ sub _parse {		# parses python source code
       $current_class = "$module_name.$classname";
       last if ($self->skip($classname));
       $Class = Autodia::Diagram::Class->new("$module_name.$classname");
-      $Diagram->add_class($Class);
+      my $exists = $Diagram->add_class($Class);
+      $Class = $exists if ($exists);
       $aliases{$classname} = $Class;
 
       warn "got class name : $classname\n";
