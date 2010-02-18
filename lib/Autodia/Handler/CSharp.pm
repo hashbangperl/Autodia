@@ -97,7 +97,8 @@ sub _parse {
                 debug("Class: $classname");
 
                 $Class = Autodia::Diagram::Class->new($classname);
-                $Diagram->add_class($Class);
+		my $exists = $Diagram->add_class($Class);
+		$Class = $exists if ($exists);
 
                 # handle superclass(es)
                 if ( $line =~ m/^\s*($PRIVACY)?\s*($CLASS)\s+\w+\s*\:\s*(.+)\s*/ )
