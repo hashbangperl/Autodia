@@ -139,7 +139,8 @@ sub _parse {
 	  # create new class with name
 	  $Class = Autodia::Diagram::Class->new($className);
 	  # add class to diagram
-	  $Class = $Diagram->add_class($Class);
+	  my $exists = $Diagram->add_class($Class);
+	  $Class = $exists if ($exists);
 	}
 
         my $continue_base = $continue->{base};
@@ -219,7 +220,8 @@ sub _parse {
 		# create new class with name
 		$Class = Autodia::Diagram::Class->new($filename);
 		# add class to diagram
-		$Class = $Diagram->add_class($Class);
+		my $exists = $Diagram->add_class($Class);
+		$Class = $exists if ($exists);
 	    }
 	    my $componentName = $2;
 	    # discard if stopword
