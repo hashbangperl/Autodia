@@ -96,7 +96,7 @@ sub _parse {
     my $fh       = shift;
     my $filename = shift;
     my $Diagram  = $self->{Diagram};
-    my $pkg_regexp = '[A-Z][\w:]+';
+    my $pkg_regexp = '[A-Za-z][\w:]+';
     my $Class;
 
     # Class::Tangram bits
