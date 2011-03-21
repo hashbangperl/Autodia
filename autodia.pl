@@ -136,7 +136,7 @@ sub get_config {
 
       if (defined $args{'i'}) {
 	my $last;
-	if ($args{l} =~ /^dbi$/i) {
+	if ($args{l} =~ /^dbi/i) {
 	  $filenames[0] = $args{'i'};
 	  warn "have file : $filenames[0]\n";
 	} else {
