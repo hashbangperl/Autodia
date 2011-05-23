@@ -27,8 +27,8 @@ ok(2);
 
 warn "checking handlers..\n";
 
-foreach ( qw/SQL Cpp Perl PHP DBI dia Torque python umbrello/ ) {
-  eval " use Autodia::Handler::$_ ; ";
+foreach ( qw/SQL Cpp Perl PHP DBI dia Torque python umbrello Mason/ ) {
+  eval " use_ok('Autodia::Handler::$_') ; ";
   warn "couldn't compile Autodia::Handler::$_ : ignoring..\n" if $@;
 }
 
