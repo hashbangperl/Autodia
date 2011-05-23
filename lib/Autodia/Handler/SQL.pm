@@ -71,7 +71,7 @@ sub _parse {
       $Class = Autodia::Diagram::Class->new($table);
       # add 'class' to diagram
       my $exists = $self->{Diagram}->add_class($Class);
-      $class = $exists if ($exists);
+      $Class = $exists if ($exists);
     } else {
       # recognise lines that define columns
       my $matched = 0;

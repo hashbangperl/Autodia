@@ -56,7 +56,7 @@ sub _parse {		# parses python source code
 
   my $Module = Autodia::Diagram::Class->new($module_name);
   my $exists = $Diagram->add_class($Module);
-  $Class = $Module = $exists if ($exists);
+  my $Class = $Module = $exists if ($exists);
 
   my %aliases = ();
 
