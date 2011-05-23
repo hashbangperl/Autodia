@@ -3,7 +3,7 @@
 
 #########################
 
-use Test::More;# qw(no_plan);
+use Test::More;
 
 warn "checking Autodia.pm\n";
 
@@ -22,9 +22,17 @@ use Autodia::Handler;
 
 warn "checking handlers..\n";
 
-foreach ( qw/SQL Cpp Perl PHP DBI dia Torque python umbrello Mason/ ) {
+foreach ( qw/SQL Cpp Perl PHP DBI dia Torque python umbrello/ ) {
   eval " require_ok('Autodia::Handler::$_') ; ";
   warn "couldn't compile Autodia::Handler::$_ : $@ : ignoring..\n" if $@;
 }
+
+if (eval "use_ok('HTML::Mason');" ) {
+    eval " require_ok('Autodia::Handler::Mason') ; ";
+    warn "couldn't compile Autodia::Handler::Mason : $@ : ignoring..\n" if $@;
+} else {
+    note('skipping Autodia::Handler::Mason - HTML::Mason not installed')
+}
+
 
 done_testing();
