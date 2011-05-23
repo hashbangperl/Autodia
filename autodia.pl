@@ -166,10 +166,10 @@ sub get_config {
 	}
       }
       if (defined $args{'d'}) {
-	print "using directory : " , $args{'d'}, "\n" unless ( $config{silent} );
-	my @dirs = split(" ",$args{'d'});
-	$config{'directory'} = \@dirs;
-	if (defined $args{'r'}) {
+	  print "using directory : " , $args{'d'}, "\n" unless ( $config{silent} );
+	  my @dirs = split(" ",$args{'d'});
+	  $config{'directory'} = \@dirs;
+	  if (defined $args{'r'}) {
 	  print "recursively searching files..\n" unless ( $config{silent} );
 	  find ( { wanted => sub {
 		     unless (-d) {
