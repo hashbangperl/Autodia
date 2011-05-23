@@ -7,7 +7,7 @@ Autodia.pm - The configuration and Utility perl module for AutoDia.
 
 =head1 VERSION
 
-2.12
+2.13
 
 =head1 DESCRIPTION
 
@@ -75,7 +75,7 @@ my %perl = (
 BEGIN {
         use Exporter ();
         use vars qw($VERSION @ISA @EXPORT);
-        $VERSION = "2.12";
+        $VERSION = "2.13";
         @ISA = qw(Exporter);
         @EXPORT = qw(
 		     &getHandlers
