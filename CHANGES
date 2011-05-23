@@ -5,6 +5,7 @@ version 2.11 23/05/2011
 - improvements to pod template - filenames now replace non-word char with underscore, added params to subs
 - process method in Handler superclass now returns no of files processed
 - experimental (non working) SQL-Translator handler
+- fix to Python Handler
 - bug fix for PHP handler (reported by Elijah Insua)
 - new ASP Handler Dalton Mackie (Gnavicks)
 - fix to duplicate class definitions/mentions in many handlers

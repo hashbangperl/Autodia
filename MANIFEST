@@ -34,6 +34,7 @@ lib/Autodia/Handler/Torque.pm
 lib/Autodia/Handler/python.pm
 lib/Autodia/Handler/umbrello.pm
 lib/Autodia/Handler/CSharp.pm
+lib/Autodia/Handler/Mason.pm
 templates/mysql_ddl.tt
 templates/pod.tt
 examples/skiplist
