@@ -1,0 +1,19 @@
+<%doc>
+Example menubar
+</%doc>
+<div class="menu">
+  <a href="/login.html">Login</a>
+% if( $UserLoggedIn ) {
+  <&| /level2/level3/selectlang.mas, language => 'userdefault' &>
+   <en>Hy,</en>
+   <de>Hallo,<de>
+   <dk>Hej,</dk>
+%  $m->comp('/level2/displayuser.mas');
+  </&>
+%}
+</div>
+
+<%init>
+ my $UserLoggedIn = 1;
+</%init>
+

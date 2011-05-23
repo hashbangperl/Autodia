@@ -108,6 +108,7 @@ sub getHandlers
 		    "python"    => 'Autodia::Handler::python',
 		    "umbrello"  => 'Autodia::Handler::umbrello',
 		    "asp"       => 'Autodia::Handler::ASP',
+		    "mason"  => 'Autodia::Handler::Mason',
 		   );
     print "getting handlers..\n" unless ( $config{silent} );
     return \%handlers;
@@ -168,6 +169,11 @@ sub getPattern
                    wildcards =>  ['asp'],
                 );
 
+  my %mason = ( regex => '\w+(.(mas|m?html)|handler)$',
+                  wildcards =>  ['mas', 'html', 'mhtml'],
+               );
+
+
 
   my %patterns = (
 		  "perl" => \%perl,
@@ -182,6 +188,7 @@ sub getPattern
 		  "python" => \%python,
 		  "umbrello" => \%umbrello,
                   "asp" => \%asp,
+	          "mason" => \%mason,
 		 );
 
   return \%{$patterns{$language}};

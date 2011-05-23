@@ -1,0 +1,13 @@
+<%doc>
+This component is called with content called
+</%doc>
+<%args>
+  $Language
+</%args>
+
+%# here we could do something to pick one language
+
+<%attr>
+  userdefault => "en"
+</%attr>
+

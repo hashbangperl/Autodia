@@ -1,0 +1,6 @@
+<%doc>
+something to demonstrate nested autohandlers
+</%doc>
+<div>
+% $m->call_next(%ARGS);
+</div>

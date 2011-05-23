@@ -1,0 +1,24 @@
+<%doc>
+This component is called directly
+</%doc>
+<%args>
+  @LatestNews => ()
+  %Config
+</%args>
+
+%# here we could do something usefull
+
+
+<%def .displaynews>
+ <%args>
+  @LatestNews => ()
+ </%args>
+
+</%def>
+
+<%def .displayconfig>
+ <%args>
+  %Config
+ </%args>
+</%def>
+

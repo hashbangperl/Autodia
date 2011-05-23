@@ -22,7 +22,7 @@ my %language_handlers = %$language_handlers;
 
 # get configuration from command line
 my %args=();
-getopts("KkFCs:SDOmMaArhHi:o:p:d:t:l:zZvVU:P:",\%args);
+getopts("KkFCs:SDOmMaArhHi:o:p:d:t:l:zZvVU:P:G:",\%args);
 my %config = %{get_config(\@ARGV,\%args)};
 
 print "\n\nAutoDia - version ".$Autodia::VERSION."(c) Copyright 2003 A Trevena\n\n" unless ( $config{silent} );
@@ -91,6 +91,8 @@ sub get_config {
     $config{username} = (defined $args{'U'}) ? $args{'U'} : "root";
     $config{password} = (defined $args{'P'}) ? $args{'P'} : "";
 
+    $config{mason_globals} = (defined $args{'G'}) ? $args{'G'} : "";
+
     $config{name} = (defined $args{n}) ? 1 : 0;
 
     $config{methods}  = 1;
@@ -104,6 +106,8 @@ sub get_config {
     if ( $args{'M'} || $args{'a'}) {
 	$config{methods} = 0;
     }
+
+
 
     Autodia->setConfig(\%config);
 
@@ -141,11 +145,11 @@ sub get_config {
 	  warn "have file : $filenames[0]\n";
 	} else {
 	  foreach my $filename ( split(" ",$args{'i'}) ) {
-	    unless ( -f $filename ) {
+	    unless ( -f $inputpath.$filename ) {
 
 	      if ($last) {
 		$filename = "$last $filename";
-		unless (-f $filename) {
+	        unless (-f $inputpath.$filename) {
 		  warn "cannot find $filename .. ignoring\n";
 		  $last = $filename;
 		  next;
@@ -245,6 +249,7 @@ autodia.pl -O                     : output to stdout
 autodia.pl -l language            : parse source as language (ie: C) and look for appropriate filename extensions if also -d
 autodia.pl -t templatefile        : use templatefile as template (otherwise uses default)
 autodia.pl -l DBI -i "mysql:test:localhost" -U username -P password : use the test database on localhost with username and password as username and password
+autodia.pl -l Mason -i "/index.html" -p comp_root -G '\$c' : use HTML::Mason to fetch /index.html from comp_root and show all components in reach. -G corresponds to allow_globals.
 autodia.pl -z                     : use graphviz to produce dot, gif, jpg or png output
 autodia.pl -Z                     : use springgraph to produce png output
 autodia.pl -v                     : use vcg to output postscript
@@ -313,6 +318,8 @@ Helpful information, links and news can be found at the autodia website -  http:
 =item C<autodia.pl -t templatefile        : use templatefile as template (otherwise uses template.xml)>
 
 =item C<autodia.pl -l DBI -i "mysql:test:localhost" -U username -P password : use test database on localhost with username and password as username and password>
+
+=item C<autodia.pl -l Mason -i "/index.html" -p comp_root -G '\$c' : use HTML::Mason to fetch /index.html from comp_root and show all components in reach. -G corresponds to allow_globals.>
 
 =item C<autodia.pl -z                     : output via graphviz>
 

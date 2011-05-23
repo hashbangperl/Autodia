@@ -9,6 +9,7 @@ version 2.11
 - new ASP Handler Dalton Mackie (Gnavicks)
 - fix to duplicate class definitions/mentions in many handlers
 - fix for lowerclass package names in perl
+- added Mason handler provided by Peter Franke
 
 version 2.10  25/08/2009
 - fixed handling of DBIC components
