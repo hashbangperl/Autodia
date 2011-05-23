@@ -45,9 +45,12 @@ parse file(s), takes hashref of configuration, returns no of files processed
 sub process {
   my $self = shift;
   my %config = %{$self->{Config}};
+
   my $processed_files = 0;
+  my ($ignore_path) = grep { warn "$_" && $config{inputpath} eq $_.'/' } @{$config{directory}};
   foreach my $filename (@{$config{filenames}}) {
-    my $current_file = $config{inputpath} . $filename;
+    my $current_file = ($ignore_path) ? $filename : $config{inputpath} . $filename ;
+    $current_file =~ s|\/+|/|g;
     print "opening $current_file\n" unless ( $config{silent} );
     $self->_reset() if ($config{singlefile});
     $self->_parse_file($current_file)
