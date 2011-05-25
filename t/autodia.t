@@ -27,7 +27,7 @@ foreach ( qw/SQL Cpp Perl PHP DBI dia Torque python umbrello/ ) {
   warn "couldn't compile Autodia::Handler::$_ : $@ : ignoring..\n" if $@;
 }
 
-if (eval "use_ok('HTML::Mason');" ) {
+if (eval "require HTML::Mason;" ) {
     eval " require_ok('Autodia::Handler::Mason') ; ";
     warn "couldn't compile Autodia::Handler::Mason : $@ : ignoring..\n" if $@;
 } else {

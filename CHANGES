@@ -1,6 +1,9 @@
 Changes to AutoDia
 ------------------
 
+version 2.14 25/05/2011
+ - fix test dependancy on HTML::Mason (again, properly this time)
+
 version 2.13 23/05/2011
  - fix test dependancy on HTML::Mason
 
