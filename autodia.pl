@@ -25,7 +25,7 @@ my %args=();
 getopts("KkFCs:SDOmMaArhHi:o:p:d:t:l:zZvVU:P:G:",\%args);
 my %config = %{get_config(\@ARGV,\%args)};
 
-print "\n\nAutoDia - version ".$Autodia::VERSION."(c) Copyright 2003 A Trevena\n\n" unless ( $config{silent} );
+print "\n\nAutoDia - version ".$Autodia::VERSION."(c) Copyright 2001-2009 Aaron Trevena\n\n" unless ( $config{silent} );
 
 # create new diagram
 print "using language : ", $config{language}, "\n" unless ( $config{silent} );
